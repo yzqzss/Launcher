@@ -10,7 +10,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.SearchView
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import de.jrpie.android.launcher.Application
 import de.jrpie.android.launcher.R
@@ -97,7 +97,9 @@ class SelectWidgetActivity : UIObjectActivity() {
 
         widgetPanelId = intent.getIntExtra(EXTRA_PANEL_ID, WidgetPanel.HOME.id)
 
-        val viewManager = LinearLayoutManager(this)
+        // Show the widgets in a grid: two columns on phones, more on wider screens.
+        val spanCount = (resources.configuration.screenWidthDp / 180).coerceAtLeast(2)
+        val viewManager = GridLayoutManager(this, spanCount)
         val viewAdapter = SelectWidgetRecyclerAdapter()
 
         binding.selectWidgetRecycler.apply {
@@ -179,6 +181,7 @@ class SelectWidgetActivity : UIObjectActivity() {
         inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView),
             View.OnClickListener {
             var textView: TextView = itemView.findViewById(R.id.list_widgets_row_name)
+            var appNameView: TextView = itemView.findViewById(R.id.list_widgets_row_app_name)
             var descriptionView: TextView = itemView.findViewById(R.id.list_widgets_row_description)
             var iconView: ImageView = itemView.findViewById(R.id.list_widgets_row_icon)
             var previewView: ImageView = itemView.findViewById(R.id.list_widgets_row_preview)
@@ -195,6 +198,15 @@ class SelectWidgetActivity : UIObjectActivity() {
 
         override fun onBindViewHolder(viewHolder: ViewHolder, i: Int) {
             viewHolder.textView.text = widgets[i].label
+
+            val appName = widgets[i].appName
+            viewHolder.appNameView.text = appName
+            viewHolder.appNameView.visibility =
+                if (appName.isNullOrEmpty() || appName.toString() == widgets[i].label?.toString()) {
+                    View.GONE
+                } else {
+                    View.VISIBLE
+                }
 
             val description = widgets[i].description
             viewHolder.descriptionView.text = description
