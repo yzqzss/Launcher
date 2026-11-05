@@ -5,6 +5,12 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.net.Uri
 import android.os.Bundle
+import android.os.LocaleList
+import android.widget.EditText
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.preference.DropDownPreference
+import java.util.Locale
 import android.provider.Settings
 import androidx.preference.PreferenceFragmentCompat
 import de.jrpie.android.launcher.R
@@ -134,6 +140,10 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
         }
 
 
+        findPreference<DropDownPreference>(
+            LauncherPreferences.functionality().keys().searchInputLanguage()
+        )?.let { setupSearchInputLanguage(it) }
+
         findPreference<androidx.preference.Preference>(
             LauncherPreferences.functionality().keys().searchAutoLaunchTouchPreventionSystemOverlay()
         )?.setOnPreferenceChangeListener { _, newValue ->
@@ -155,5 +165,70 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
         }
 
         updateVisibility()
+    }
+
+    /** Entries: keyboard decides, English, the system languages, the current value, "Other…". */
+    private fun setupSearchInputLanguage(pref: DropDownPreference) {
+        val context = requireContext()
+        fun label(tag: String): String = when (tag) {
+            "" -> context.getString(R.string.settings_functionality_search_input_language_ime)
+            CUSTOM_LANGUAGE -> context.getString(R.string.settings_functionality_search_input_language_custom)
+            else -> Locale.forLanguageTag(tag).let { locale ->
+                locale.getDisplayName(locale).replaceFirstChar { it.titlecase(locale) } + " ($tag)"
+            }
+        }
+
+        fun refresh() {
+            val tags = linkedSetOf("", "en")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val system = LocaleList.getDefault()
+                for (i in 0 until system.size()) tags.add(system[i].toLanguageTag())
+            } else {
+                tags.add(Locale.getDefault().toLanguageTag())
+            }
+            pref.value?.takeIf { it.isNotBlank() }?.let { tags.add(it) }
+            val values = tags.toList() + CUSTOM_LANGUAGE
+            pref.entryValues = values.toTypedArray()
+            pref.entries = values.map { label(it) }.toTypedArray()
+            pref.summary = label(pref.value ?: "")
+        }
+        refresh()
+
+        pref.setOnPreferenceChangeListener { _, newValue ->
+            if (newValue == CUSTOM_LANGUAGE) {
+                val input = EditText(context).apply {
+                    setSingleLine()
+                    hint = "zh-CN"
+                    setText(pref.value)
+                }
+                AlertDialog.Builder(context, R.style.AlertDialogCustom)
+                    .setTitle(R.string.settings_functionality_search_input_language)
+                    .setMessage(R.string.settings_functionality_search_input_language_custom_message)
+                    .setView(input)
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        val tag = Locale.forLanguageTag(input.text.toString().trim()).toLanguageTag()
+                        if (tag == "und") {
+                            Toast.makeText(
+                                context,
+                                R.string.settings_functionality_search_input_language_invalid,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            pref.value = tag
+                            refresh()
+                        }
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+                false
+            } else {
+                pref.summary = label(newValue as? String ?: "")
+                true
+            }
+        }
+    }
+
+    companion object {
+        private const val CUSTOM_LANGUAGE = "custom"
     }
 }
