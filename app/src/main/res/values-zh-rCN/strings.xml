@@ -266,6 +266,11 @@
     <string name="settings_functionality_search_transliteration">拼音 / 罗马字搜索</string>
     <string name="settings_functionality_search_transliteration_disabled">关闭</string>
     <string name="settings_functionality_search_transliteration_auto">自动（按系统语言）</string>
+    <string name="settings_functionality_search_dictionaries">搜索词典包</string>
+    <string name="settings_functionality_search_dictionary_zh">中文（多音字）</string>
+    <string name="settings_functionality_search_dictionary_ja">日文（汉字读音）</string>
+    <string name="settings_functionality_search_dictionary_installed">版本 %1$s</string>
+    <string name="settings_functionality_search_dictionary_not_installed">未安装</string>
     <string name="settings_list_layout">应用程序列表样式</string>
     <string name="pin_shortcut_button_bind">绑定到手势</string>
     <string name="list_other_track_play_pause">音乐：播放 / 暂停</string>

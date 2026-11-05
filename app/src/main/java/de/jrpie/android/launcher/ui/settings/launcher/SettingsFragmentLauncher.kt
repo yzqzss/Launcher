@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.preference.PreferenceFragmentCompat
+import de.jrpie.android.launcher.DictionaryPacks
 import de.jrpie.android.launcher.R
 import de.jrpie.android.launcher.SearchTransliteration
 import de.jrpie.android.launcher.actions.lock.LockMethod
@@ -135,6 +136,8 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
         }
 
 
+        updateDictionaryStatus()
+
         findPreference<androidx.preference.DropDownPreference>(
             LauncherPreferences.functionality().keys().searchTransliteration()
         )?.apply {
@@ -168,5 +171,33 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
         }
 
         updateVisibility()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateDictionaryStatus()
+    }
+
+    /** Shows which [DictionaryPacks] are installed. */
+    private fun updateDictionaryStatus() {
+        val pref = findPreference<androidx.preference.Preference>(
+            getString(R.string.settings_functionality_search_dictionaries_key)
+        ) ?: return
+        if (!SearchTransliteration.isSupported()) {
+            pref.isVisible = false
+            return
+        }
+        pref.summary = DictionaryPacks.Language.entries.joinToString("\n") { language ->
+            val name = getString(
+                when (language) {
+                    DictionaryPacks.Language.CHINESE -> R.string.settings_functionality_search_dictionary_zh
+                    DictionaryPacks.Language.JAPANESE -> R.string.settings_functionality_search_dictionary_ja
+                }
+            )
+            val status = DictionaryPacks.get(language)?.let {
+                getString(R.string.settings_functionality_search_dictionary_installed, it.versionName)
+            } ?: getString(R.string.settings_functionality_search_dictionary_not_installed)
+            "$name: $status"
+        }
     }
 }

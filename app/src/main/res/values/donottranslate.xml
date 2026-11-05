@@ -173,6 +173,7 @@
     <string name="settings_functionality_search_auto_launch_touch_prevention_max_duration_key" translatable="false">functionality.search_auto_launch_touch_prevention_max_duration</string>
     <string name="settings_functionality_search_auto_launch_touch_prevention_system_overlay_key" translatable="false">functionality.search_auto_launch_touch_prevention_system_overlay</string>
     <string name="settings_functionality_search_transliteration_key" translatable="false">functionality.search_transliteration</string>
+    <string name="settings_functionality_search_dictionaries_key" translatable="false">functionality.search_dictionaries</string>
     <string name="settings_functionality_search_web_key" translatable="false">functionality.search_web</string>
     <string name="settings_functionality_search_auto_open_keyboard_key" translatable="false">functionality.search_auto_keyboard</string>
     <string name="settings_functionality_search_auto_close_keyboard_key" translatable="false">functionality.search_auto_close_keyboard</string>

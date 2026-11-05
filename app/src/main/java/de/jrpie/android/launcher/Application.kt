@@ -172,6 +172,7 @@ class Application : android.app.Application() {
             removeUnusedShortcuts(this)
         }
         loadApps()
+        DictionaryPacks.init(this)
 
         createNotificationChannels(this)
     }

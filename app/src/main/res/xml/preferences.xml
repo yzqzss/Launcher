@@ -156,6 +156,10 @@
             android:defaultValue=""
             app:useSimpleSummaryProvider="true" />
         <Preference
+            android:key="@string/settings_functionality_search_dictionaries_key"
+            android:title="@string/settings_functionality_search_dictionaries"
+            android:selectable="false" />
+        <Preference
             android:key="@string/settings_actions_lock_method_key"
             android:title="@string/settings_actions_lock_method" />
     </PreferenceCategory>

@@ -22,3 +22,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Launcher"
 include(":app")
+include(":dict-zh")
+include(":dict-ja")

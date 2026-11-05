@@ -1,0 +1,1 @@
+Unihan database: Copyright © Unicode, Inc. Unicode License v3, https://www.unicode.org/license.txt

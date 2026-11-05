@@ -43,17 +43,25 @@ abstract class FilterHelper {
         val resultsPrimary: MutableList<T> = ArrayList()
         val resultsSecondary: MutableList<T> = ArrayList()
         val normalizedQuery: String = normalize(query)
-        val queries = listOfNotNull(
-            normalizedQuery,
-            SearchTransliteration.transliterate(query)?.let(normalize)?.takeIf { it.isNotEmpty() }
-        ).distinct()
+        val queryForms = SearchTransliteration.queryVariants(query)
+        val queries = (listOf(normalizedQuery) + queryForms.exact.map(normalize).filter { it.isNotEmpty() })
+            .distinct()
+        val lenientQueries = queryForms.lenient.map(normalize).filter { it.isNotEmpty() }.distinct()
         for (item in this) {
-            val itemKeys = keys(item)
-                .flatMap { listOf(it) + SearchTransliteration.searchKeys(it) }
-                .map(normalize)
-            if (itemKeys.any { key -> queries.any { key.startsWith(it) } }) {
+            val exactKeys = ArrayList<String>()
+            val lenientKeys = ArrayList<String>()
+            for (key in keys(item)) {
+                exactKeys.add(normalize(key))
+                val forms = SearchTransliteration.searchKeys(key)
+                forms.exact.mapTo(exactKeys, normalize)
+                forms.lenient.mapTo(lenientKeys, normalize)
+            }
+            fun matches(predicate: (String, String) -> Boolean) =
+                exactKeys.any { key -> queries.any { predicate(key, it) } } ||
+                        lenientKeys.any { key -> lenientQueries.any { predicate(key, it) } }
+            if (matches { key, q -> key.startsWith(q) }) {
                 resultsPrimary.add(item)
-            } else if (itemKeys.any { key -> queries.any { key.contains(it) } }) {
+            } else if (matches { key, q -> key.contains(q) }) {
                 resultsSecondary.add(item)
             }
         }

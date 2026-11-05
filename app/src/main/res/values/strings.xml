@@ -194,6 +194,11 @@
     <string name="settings_functionality_search_transliteration">Search by romanization</string>
     <string name="settings_functionality_search_transliteration_disabled">Disabled</string>
     <string name="settings_functionality_search_transliteration_auto">Automatic (system languages)</string>
+    <string name="settings_functionality_search_dictionaries">Search dictionary packs</string>
+    <string name="settings_functionality_search_dictionary_zh">Chinese (polyphonic characters)</string>
+    <string name="settings_functionality_search_dictionary_ja">Japanese (kanji readings)</string>
+    <string name="settings_functionality_search_dictionary_installed">version %1$s</string>
+    <string name="settings_functionality_search_dictionary_not_installed">not installed</string>
 
     <string name="settings_functionality_search_web">Search the web</string>
     <string name="settings_functionality_search_web_summary">Press return while searching the app list to launch a web search.</string>
