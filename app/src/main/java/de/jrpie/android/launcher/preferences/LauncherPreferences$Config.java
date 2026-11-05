@@ -77,6 +77,10 @@ import eu.jonahbauer.android.preference.annotations.Preferences;
                 }),
                 @PreferenceGroup(name = "functionality", prefix = "settings_functionality_", suffix = "_key", value = {
                         @Preference(name = "search_auto_launch", type = boolean.class, defaultValue = "true"),
+                        // launch guard (see SearchLaunchGuard): all values in milliseconds, 0 disables the guard
+                        @Preference(name = "search_auto_launch_guard_duration", type = int.class, defaultValue = "300"),
+                        @Preference(name = "search_auto_launch_guard_extension", type = int.class, defaultValue = "100"),
+                        @Preference(name = "search_auto_launch_guard_max_duration", type = int.class, defaultValue = "1500"),
                         @Preference(name = "search_web", type = boolean.class, description = "false"),
                         @Preference(name = "search_auto_open_keyboard", type = boolean.class, defaultValue = "true"),
                         @Preference(name = "search_auto_close_keyboard", type = boolean.class, defaultValue = "false"),

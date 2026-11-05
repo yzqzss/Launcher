@@ -256,6 +256,11 @@
     <string name="settings_gesture_swipe_larger_reverse"><![CDATA[&gt;（反向）]]></string>
     <string name="settings_gesture_swipe_smaller_reverse"><![CDATA[&lt; (反向)]]></string>
     <string name="settings_functionality_auto_launch_summary">启用后将直接启动搜索所匹配到的应用，可以通过在搜索内容前添加空格来临时停用该功能。</string>
+    <string name="settings_functionality_auto_launch_guard_duration">防误触停留时长（毫秒）</string>
+    <string name="settings_functionality_auto_launch_guard_duration_summary">自动启动应用前短暂拦截点击，避免还在输入的按键点到应用里。0 为关闭。不受系统动画设置影响。</string>
+    <string name="settings_functionality_auto_launch_guard_extension">每次点击延长（毫秒）</string>
+    <string name="settings_functionality_auto_launch_guard_max_duration">最长停留时长（毫秒）</string>
+    <string name="launch_guard_opening">正在打开 %1$s</string>
     <string name="settings_list_layout">应用程序列表样式</string>
     <string name="pin_shortcut_button_bind">绑定到手势</string>
     <string name="list_other_track_play_pause">音乐：播放 / 暂停</string>

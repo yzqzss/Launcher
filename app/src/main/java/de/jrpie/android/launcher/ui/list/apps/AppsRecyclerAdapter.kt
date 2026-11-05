@@ -61,6 +61,9 @@ class AppsRecyclerAdapter(
     // temporarily disable auto launch
     var disableAutoLaunch: Boolean = false
 
+    // pending auto launch, see [SearchLaunchGuard]
+    private var launchGuard: SearchLaunchGuard? = null
+
     init {
         apps.observe(this.activity as AppCompatActivity) {
             updateAppsList()
@@ -234,6 +237,8 @@ class AppsRecyclerAdapter(
     }
 
     fun selectItem(pos: Int, rect: Rect = Rect()) {
+        // an explicit selection (e.g. pressing enter) supersedes a pending auto launch
+        launchGuard?.cancel()
         val appInfo = appsListDisplayed.getOrNull(pos) ?: return
         when (intention) {
             AbstractListActivity.Companion.Intention.VIEW -> {
@@ -249,22 +254,50 @@ class AppsRecyclerAdapter(
         }
     }
 
+    private fun autoLaunch(app: AbstractDetailedAppInfo) {
+        app.getAction().invoke(activity)
+
+        val inputMethodManager =
+            activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.hideSoftInputFromWindow(
+            (activity.currentFocus ?: root).windowToken, 0
+        )
+    }
+
     fun updateAppsList(triggerAutoLaunch: Boolean = false) {
         appsListDisplayed.clear()
         apps.value?.let { appsListDisplayed.addAll(appFilter(it)) }
 
-        if (triggerAutoLaunch &&
+        val guard = launchGuard
+        if (guard != null) {
+            // A launch is pending: further typing extends the guard, unless the user
+            // cleared the query or typed something that no longer matches the app.
+            if (triggerAutoLaunch) {
+                val target = guard.app.getRawInfo()
+                if (appFilter.query.isBlank() ||
+                    appsListDisplayed.none { it.getRawInfo() == target }
+                ) {
+                    guard.cancel()
+                } else {
+                    guard.extend()
+                }
+            }
+        } else if (triggerAutoLaunch &&
             appsListDisplayed.size == 1
             && intention == AbstractListActivity.Companion.Intention.VIEW
             && !disableAutoLaunch
             && LauncherPreferences.functionality().searchAutoLaunch()
         ) {
             val app = appsListDisplayed[0]
-            app.getAction().invoke(activity)
-
-            val inputMethodManager =
-                activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-            inputMethodManager.hideSoftInputFromWindow(View(activity).windowToken, 0)
+            if (SearchLaunchGuard.durationMs() > 0) {
+                SearchLaunchGuard(
+                    activity, app,
+                    launch = { autoLaunch(app) },
+                    onFinished = { launchGuard = null }
+                ).also { launchGuard = it }.start()
+            } else {
+                autoLaunch(app)
+            }
         }
 
         notifyDataSetChanged()

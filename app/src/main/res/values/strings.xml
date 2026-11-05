@@ -184,6 +184,11 @@
     <string name="settings_enabled_gestures_diagonal_swipe">Diagonal swipe gestures</string>
     <string name="settings_functionality_auto_launch">Launch search results</string>
     <string name="settings_functionality_auto_launch_summary">Press space to disable this feature temporarily.</string>
+    <string name="settings_functionality_auto_launch_guard_duration">Launch guard duration (ms)</string>
+    <string name="settings_functionality_auto_launch_guard_duration_summary">Before an auto-launched app opens, briefly block touches so remaining keystrokes don\'t hit the app. 0 disables. Not affected by system animation settings.</string>
+    <string name="settings_functionality_auto_launch_guard_extension">Launch guard extension per tap (ms)</string>
+    <string name="settings_functionality_auto_launch_guard_max_duration">Launch guard maximum duration (ms)</string>
+    <string name="launch_guard_opening">Opening %1$s</string>
 
     <string name="settings_functionality_search_web">Search the web</string>
     <string name="settings_functionality_search_web_summary">Press return while searching the app list to launch a web search.</string>
