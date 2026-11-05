@@ -256,12 +256,12 @@
     <string name="settings_gesture_swipe_larger_reverse"><![CDATA[&gt;（反向）]]></string>
     <string name="settings_gesture_swipe_smaller_reverse"><![CDATA[&lt; (反向)]]></string>
     <string name="settings_functionality_auto_launch_summary">启用后将直接启动搜索所匹配到的应用，可以通过在搜索内容前添加空格来临时停用该功能。</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_duration">自动启动防误触时长（毫秒）</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_duration_summary">自动启动搜索结果后，在这段时间内拦截点击，避免还在输入的按键点到应用里。触发时会立即收起键盘。0 为关闭。不受系统动画设置影响。</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_duration">防误触时长（毫秒）</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_duration_summary">自动启动搜索结果后，在这段时间内忽略点击。0 为关闭。</string>
     <string name="settings_functionality_auto_launch_touch_prevention_extension">每次点击延长（毫秒）</string>
     <string name="settings_functionality_auto_launch_touch_prevention_max_duration">最长时长（毫秒）</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay">用悬浮窗覆盖键盘区域</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">立即打开应用，并在原键盘位置上方显示悬浮窗拦截点击，不会拖慢应用的打开速度。需要“显示在其他应用的上层”权限；没有权限时改为在启动器内拦截点击，计时结束后再打开应用。</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay">使用悬浮窗拦截</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">立即打开应用，仅拦截原键盘区域。需要“显示在其他应用的上层”权限。</string>
     <string name="auto_launch_touch_prevention_opening">正在打开 %1$s</string>
     <string name="settings_list_layout">应用程序列表样式</string>
     <string name="pin_shortcut_button_bind">绑定到手势</string>
