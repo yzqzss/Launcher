@@ -154,6 +154,11 @@
             android:key="@string/settings_functionality_search_input_language_key"
             android:title="@string/settings_functionality_search_input_language"
             android:defaultValue="" />
+        <SwitchPreference
+            android:key="@string/settings_functionality_search_force_ascii_keyboard_key"
+            android:defaultValue="false"
+            android:title="@string/settings_functionality_search_force_ascii_keyboard"
+            android:summary="@string/settings_functionality_search_force_ascii_keyboard_summary" />
         <Preference
             android:key="@string/settings_actions_lock_method_key"
             android:title="@string/settings_actions_lock_method" />
