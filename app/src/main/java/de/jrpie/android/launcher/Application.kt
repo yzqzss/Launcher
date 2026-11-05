@@ -71,11 +71,12 @@ class Application : android.app.Application() {
         }
 
         override fun onPackagesSuspended(packageNames: Array<out String>?, user: UserHandle?) {
-            // TODO
+            // suspended apps are shown with a gray icon
+            loadApps()
         }
 
         override fun onPackagesUnsuspended(packageNames: Array<out String>?, user: UserHandle?) {
-            // TODO
+            loadApps()
         }
 
         override fun onPackagesUnavailable(p0: Array<out String>?, p1: UserHandle?, p2: Boolean) {

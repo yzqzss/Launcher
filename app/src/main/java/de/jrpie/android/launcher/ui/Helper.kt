@@ -2,6 +2,7 @@ package de.jrpie.android.launcher.ui
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.Drawable
 import android.view.View
@@ -38,6 +39,19 @@ fun ImageView.transformMonochrome(grayscale: Boolean, theme: ColorTheme) {
         ColorMatrixColorFilter(theme.monochromeMatrix)
     } else {
         null
+    }
+}
+
+private val PAUSED_APP_FILTER = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) })
+private const val PAUSED_APP_ALPHA = 0.5f
+
+/** Paused / suspended apps get a gray, faded icon (independent of the monochrome setting). */
+fun ImageView.markPaused(paused: Boolean) {
+    if (paused) {
+        this.colorFilter = PAUSED_APP_FILTER
+        this.imageAlpha = (PAUSED_APP_ALPHA * 255).toInt()
+    } else {
+        this.imageAlpha = 255
     }
 }
 

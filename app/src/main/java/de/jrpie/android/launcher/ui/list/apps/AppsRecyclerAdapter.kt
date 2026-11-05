@@ -28,6 +28,7 @@ import de.jrpie.android.launcher.preferences.LauncherPreferences
 import de.jrpie.android.launcher.preferences.list.AppNameFormat
 import de.jrpie.android.launcher.preferences.list.ListLayout
 import de.jrpie.android.launcher.ui.list.AbstractListActivity
+import de.jrpie.android.launcher.ui.markPaused
 import de.jrpie.android.launcher.ui.transformMonochrome
 
 /**
@@ -94,6 +95,7 @@ class AppsRecyclerAdapter(
         val appIcon = appsListDisplayed[i].getIcon(activity)
 
         viewHolder.img.transformMonochrome(grayscale, colorTheme)
+        viewHolder.img.markPaused(appsListDisplayed[i].isPaused())
         viewHolder.img.setImageDrawable(appIcon.constantState?.newDrawable() ?: appIcon)
 
         if (layout.useBadgedText) {

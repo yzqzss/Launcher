@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.UserHandle
+import android.os.UserManager
 import de.jrpie.android.launcher.actions.Action
 import de.jrpie.android.launcher.actions.AppAction
 import de.jrpie.android.launcher.getUserFromId
@@ -18,9 +20,11 @@ class DetailedAppInfo(
     private val icon: Drawable,
     private val privateSpace: Boolean,
     private val removable: Boolean = true,
+    private val paused: Boolean = false,
 ) : AbstractDetailedAppInfo {
 
-    constructor(activityInfo: LauncherActivityInfo, private: Boolean) : this(
+    /** @param profilePaused whether the profile of the app is paused (quiet mode) */
+    constructor(activityInfo: LauncherActivityInfo, private: Boolean, profilePaused: Boolean = false) : this(
         AppInfo(
             activityInfo.applicationInfo.packageName,
             activityInfo.name,
@@ -30,8 +34,13 @@ class DetailedAppInfo(
         activityInfo.getBadgedIcon(0),
         private,
         // App can be uninstalled iff it is not a system app
-        activityInfo.applicationInfo.flags.and(ApplicationInfo.FLAG_SYSTEM) == 0
+        activityInfo.applicationInfo.flags.and(ApplicationInfo.FLAG_SYSTEM) == 0,
+        profilePaused || isSuspended(activityInfo.applicationInfo)
     )
+
+    override fun isPaused(): Boolean {
+        return paused
+    }
 
 
     override fun getLabel(): String {
@@ -66,8 +75,18 @@ class DetailedAppInfo(
     companion object {
         fun fromAppInfo(appInfo: AppInfo, context: Context): DetailedAppInfo? {
             return appInfo.getLauncherActivityInfo(context)?.let {
-                DetailedAppInfo(it, it.user == getPrivateSpaceUser(context))
+                DetailedAppInfo(it, it.user == getPrivateSpaceUser(context), isProfilePaused(it.user, context))
             }
+        }
+
+        private fun isSuspended(info: ApplicationInfo): Boolean =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+                    info.flags and ApplicationInfo.FLAG_SUSPENDED != 0
+
+        fun isProfilePaused(user: UserHandle, context: Context): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
+            val userManager = context.getSystemService(Context.USER_SERVICE) as UserManager
+            return userManager.isQuietModeEnabled(user)
         }
     }
 }

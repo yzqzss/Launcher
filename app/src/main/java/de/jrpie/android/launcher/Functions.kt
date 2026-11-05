@@ -166,9 +166,11 @@ fun getApps(
     // TODO: shortcuts - launcherApps.getShortcuts()
     val users = userManager.userProfiles
     for (user in users) {
+        var profilePaused = false
         // don't load apps from a user profile that has quiet mode enabled
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             if (userManager.isQuietModeEnabled(user)) {
+                profilePaused = true
                 // hide paused apps
                 if (LauncherPreferences.apps().hidePausedApps()) {
                     continue
@@ -183,7 +185,7 @@ fun getApps(
         }
         try {
             launcherApps.getActivityList(null, user).forEach {
-                loadList.add(DetailedAppInfo(it, it.user == privateSpaceUser))
+                loadList.add(DetailedAppInfo(it, it.user == privateSpaceUser, profilePaused))
             }
         } catch (e: Exception) {
             // getActivityList seems to be broken on some Android distributions.

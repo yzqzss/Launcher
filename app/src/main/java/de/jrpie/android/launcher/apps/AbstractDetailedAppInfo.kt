@@ -20,6 +20,12 @@ sealed interface AbstractDetailedAppInfo {
     fun isRemovable(): Boolean
     fun getAction(): Action
 
+    /**
+     * The app can't be opened right now: it is suspended (e.g. by Digital Wellbeing or
+     * `pm suspend`) or its profile is paused. Such apps are shown with a gray icon.
+     */
+    fun isPaused(): Boolean = false
+
 
     fun getCustomLabel(context: Context): String {
         val map = (context.applicationContext as? Application)?.getCustomAppNames()
