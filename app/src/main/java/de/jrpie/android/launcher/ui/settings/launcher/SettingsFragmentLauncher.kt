@@ -196,15 +196,28 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
 
         pref.setOnPreferenceChangeListener { _, newValue ->
             if (newValue == CUSTOM_LANGUAGE) {
-                val input = EditText(context).apply {
+                val builder = AlertDialog.Builder(context, R.style.AlertDialogCustom)
+                // use the dialog's theme, otherwise the text may be invisible on its background
+                val input = EditText(builder.context).apply {
                     setSingleLine()
-                    hint = "zh-CN"
+                    // language tags are ASCII
+                    inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                            android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                    imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE or
+                            android.view.inputmethod.EditorInfo.IME_FLAG_FORCE_ASCII
+                    hint = "ja"
                     setText(pref.value)
+                    selectAll()
                 }
-                AlertDialog.Builder(context, R.style.AlertDialogCustom)
+                val padding = (20 * resources.displayMetrics.density).toInt()
+                val container = android.widget.FrameLayout(builder.context).apply {
+                    setPadding(padding, 0, padding, 0)
+                    addView(input)
+                }
+                val dialog = builder
                     .setTitle(R.string.settings_functionality_search_input_language)
                     .setMessage(R.string.settings_functionality_search_input_language_custom_message)
-                    .setView(input)
+                    .setView(container)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
                         val tag = Locale.forLanguageTag(input.text.toString().trim()).toLanguageTag()
                         if (tag == "und") {
@@ -219,7 +232,17 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
                         }
                     }
                     .setNegativeButton(android.R.string.cancel, null)
-                    .show()
+                    .create()
+                // focus the input and open the keyboard right away
+                dialog.window?.setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+                )
+                dialog.show()
+                input.requestFocus()
+                input.setOnEditorActionListener { _, _, _ ->
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+                    true
+                }
                 false
             } else {
                 pref.summary = label(newValue as? String ?: "")
