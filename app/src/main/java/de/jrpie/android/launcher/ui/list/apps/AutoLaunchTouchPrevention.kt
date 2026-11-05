@@ -263,8 +263,8 @@ sealed class AutoLaunchTouchPrevention(
                 && canUseSystemOverlay(activity)
             ) {
                 val screenHeight = activity.resources.displayMetrics.heightPixels
-                val extra = (48 * activity.resources.displayMetrics.density).toInt()
-                val height = if (imeHeight > 0) imeHeight + extra else (screenHeight * 0.45f).toInt()
+                // cover exactly the area of the keyboard
+                val height = if (imeHeight > 0) imeHeight else (screenHeight * 0.45f).toInt()
                 val overlay = SystemOverlay(activity, app, onFinished)
                 doLaunch()
                 return if (overlay.start(min(height, screenHeight))) overlay else null
