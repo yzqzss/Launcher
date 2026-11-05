@@ -179,7 +179,7 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
         val pref = findPreference<androidx.preference.Preference>(
             getString(R.string.settings_functionality_search_dictionaries_key)
         ) ?: return
-        pref.summary = DictionaryPacks.Language.entries.joinToString("\n") { language ->
+        val status = DictionaryPacks.Language.entries.joinToString("\n") { language ->
             val name = getString(
                 when (language) {
                     DictionaryPacks.Language.CHINESE -> R.string.settings_functionality_search_dictionary_zh
@@ -187,10 +187,18 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
                     DictionaryPacks.Language.BASE -> R.string.settings_functionality_search_dictionary_base
                 }
             )
-            val status = DictionaryPacks.get(language)?.let {
+            val installed = DictionaryPacks.get(language)?.let {
                 getString(R.string.settings_functionality_search_dictionary_installed, it.versionName)
             } ?: getString(R.string.settings_functionality_search_dictionary_not_installed)
-            "$name: $status"
+            "$name: $installed"
         }
+        val note = getString(
+            if (SearchTransliteration.isIcuAvailable()) {
+                R.string.settings_functionality_search_dictionary_base_note_system
+            } else {
+                R.string.settings_functionality_search_dictionary_base_note_required
+            }
+        )
+        pref.summary = "$status\n\n$note"
     }
 }

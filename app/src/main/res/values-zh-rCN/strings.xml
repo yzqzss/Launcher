@@ -269,7 +269,9 @@
     <string name="settings_functionality_search_dictionaries">搜索词典包</string>
     <string name="settings_functionality_search_dictionary_zh">中文（多音字）</string>
     <string name="settings_functionality_search_dictionary_ja">日文（汉字读音）</string>
-    <string name="settings_functionality_search_dictionary_base">转写表（优先于系统转写；Android 10 以下必需）</string>
+    <string name="settings_functionality_search_dictionary_base">转写表</string>
+    <string name="settings_functionality_search_dictionary_base_note_system">Android 10 及以上可直接使用系统自带的转写，转写表可不装。装了转写表会优先使用它，便于独立于系统更新。</string>
+    <string name="settings_functionality_search_dictionary_base_note_required">Android 10 以下需要安装转写表，才能用拼音 / 罗马字搜索。</string>
     <string name="settings_functionality_search_dictionary_installed">版本 %1$s</string>
     <string name="settings_functionality_search_dictionary_not_installed">未安装</string>
     <string name="settings_list_layout">应用程序列表样式</string>
