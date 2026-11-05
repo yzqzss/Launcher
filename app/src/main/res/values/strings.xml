@@ -191,13 +191,6 @@
     <string name="settings_functionality_auto_launch_touch_prevention_system_overlay">Use floating overlay</string>
     <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">Open the app at once; block only the keyboard area. Needs \"Display over other apps\".</string>
     <string name="auto_launch_touch_prevention_opening">Opening %1$s</string>
-    <string name="settings_functionality_search_input_language">Search input language</string>
-    <string name="settings_functionality_search_input_language_ime">Let the keyboard decide</string>
-    <string name="settings_functionality_search_input_language_custom">Other…</string>
-    <string name="settings_functionality_search_input_language_custom_message">Language tag, e.g. ja, de or zh-CN. The keyboard must have this language enabled.</string>
-    <string name="settings_functionality_search_input_language_invalid">Invalid language tag</string>
-    <string name="settings_functionality_search_force_ascii_keyboard">Lock to Latin keyboard</string>
-    <string name="settings_functionality_search_force_ascii_keyboard_summary">Search with a Latin (A–Z) layout only. The keyboard can\'t switch to e.g. pinyin.</string>
 
     <string name="settings_functionality_search_web">Search the web</string>
     <string name="settings_functionality_search_web_summary">Press return while searching the app list to launch a web search.</string>

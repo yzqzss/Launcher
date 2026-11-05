@@ -86,10 +86,6 @@ import eu.jonahbauer.android.preference.annotations.Preferences;
                         @Preference(name = "search_web", type = boolean.class, description = "false"),
                         @Preference(name = "search_auto_open_keyboard", type = boolean.class, defaultValue = "true"),
                         @Preference(name = "search_auto_close_keyboard", type = boolean.class, defaultValue = "false"),
-                        // preferred input language of the search field (BCP 47 tag), "" lets the keyboard decide
-                        @Preference(name = "search_input_language", type = String.class, defaultValue = ""),
-                        // request an ASCII-capable keyboard (IME_FLAG_FORCE_ASCII); keyboards then won't switch to e.g. pinyin
-                        @Preference(name = "search_force_ascii_keyboard", type = boolean.class, defaultValue = "false"),
                 }),
                 @PreferenceGroup(name = "enabled_gestures", prefix = "settings_enabled_gestures_", suffix = "_key", value = {
                         @Preference(name = "double_swipe", type = boolean.class, defaultValue = "true"),

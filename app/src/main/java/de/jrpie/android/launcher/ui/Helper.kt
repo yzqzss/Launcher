@@ -4,10 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.Drawable
-import android.os.Build
-import android.os.LocaleList
-import android.view.inputmethod.EditorInfo
-import android.widget.EditText
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
@@ -76,27 +72,6 @@ private fun closeSoftKeyboard(activity: Activity) {
  *
  * @param openKeyboard false: the keyboard is not opened; true: searchAutoOpenKeyboard setting is used.
  */
-/**
- * Tells the keyboard which language to use in the search field
- * (functionality.search_input_language; empty = let the keyboard decide).
- * This is only a hint, the user can still switch languages in the keyboard.
- * functionality.search_force_ascii_keyboard additionally requests an ASCII-capable
- * layout, which keyboards enforce (no switching to e.g. pinyin).
- */
-fun applySearchInputLanguage(searchView: SearchView) {
-    val tag = LauncherPreferences.functionality().searchInputLanguage()?.trim().orEmpty()
-    val forceAscii = LauncherPreferences.functionality().searchForceAsciiKeyboard()
-    searchView.imeOptions = if (forceAscii) {
-        searchView.imeOptions or EditorInfo.IME_FLAG_FORCE_ASCII
-    } else {
-        searchView.imeOptions and EditorInfo.IME_FLAG_FORCE_ASCII.inv()
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        searchView.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
-            ?.imeHintLocales = if (tag.isEmpty()) null else LocaleList.forLanguageTags(tag)
-    }
-}
-
 fun applyKeyboardSettings(activity: Activity, recyclerView: RecyclerView, searchView: SearchView, openKeyboard: Boolean = true) {
     if (LauncherPreferences.functionality().searchAutoCloseKeyboard()) {
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -110,7 +85,6 @@ fun applyKeyboardSettings(activity: Activity, recyclerView: RecyclerView, search
             }
         })
     }
-    applySearchInputLanguage(searchView)
     if (openKeyboard && LauncherPreferences.functionality().searchAutoOpenKeyboard()) {
         searchView.openSoftKeyboard(activity)
     }
