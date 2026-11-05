@@ -214,6 +214,9 @@
     <string name="settings_apps_hidden">Hidden apps</string>
     <string name="settings_apps_hide_bound_apps">Don\'t show apps that are bound to a gesture in the app list</string>
     <string name="settings_apps_hide_paused_apps">Hide paused apps</string>
+    <string name="settings_apps_gray_paused_apps">Gray out paused apps</string>
+    <string name="settings_apps_gray_paused_apps_summary">Show a gray icon for apps that can\'t be opened right now (paused or suspended).</string>
+    <string name="settings_apps_paused_apps_opacity">Paused app icon opacity (%)</string>
     <string name="settings_apps_hide_private_space_apps">Hide private space from app list</string>
     <string name="settings_list_layout">Layout of app list</string>
     <string name="settings_list_reverse_layout">Reverse the app list</string>

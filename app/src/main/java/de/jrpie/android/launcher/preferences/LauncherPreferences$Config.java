@@ -38,6 +38,9 @@ import eu.jonahbauer.android.preference.annotations.Preferences;
                         @Preference(name = "custom_names", type = HashMap.class, serializer = MapAbstractAppInfoStringPreferenceSerializer.class),
                         @Preference(name = "hide_bound_apps", type = boolean.class, defaultValue = "false"),
                         @Preference(name = "hide_paused_apps", type = boolean.class, defaultValue = "false"),
+                        // paused / suspended apps: gray icon, with this opacity (percent)
+                        @Preference(name = "gray_paused_apps", type = boolean.class, defaultValue = "true"),
+                        @Preference(name = "paused_apps_opacity", type = int.class, defaultValue = "50"),
                         @Preference(name = "hide_private_space_apps", type = boolean.class, defaultValue = "false"),
                 }),
                 @PreferenceGroup(name = "list", prefix = "settings_list_", suffix = "_key", value = {

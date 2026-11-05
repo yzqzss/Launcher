@@ -207,6 +207,9 @@
     <string name="dialog_consent_accessibility_privileges">我已知晓，这将赋予 μLauncher 广泛且重要的权限。</string>
     <string name="settings_apps_hide_private_space_apps">在应用程序列表中隐藏私人空间</string>
     <string name="settings_apps_hide_paused_apps">隐藏已被暂停的应用</string>
+    <string name="settings_apps_gray_paused_apps">灰显已暂停的应用</string>
+    <string name="settings_apps_gray_paused_apps_summary">暂时无法打开的应用（已暂停或被停用）显示为灰色图标。</string>
+    <string name="settings_apps_paused_apps_opacity">已暂停应用图标不透明度（%）</string>
     <string name="settings_gesture_description_back">返回按键 / 返回手势</string>
     <string name="settings_gesture_description_tap_down">先单击然后再向下滑动</string>
     <string name="settings_functionality_search_web">在网络上搜索</string>

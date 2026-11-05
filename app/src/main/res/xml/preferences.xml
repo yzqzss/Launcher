@@ -213,6 +213,22 @@
             android:defaultValue="false" />
 
         <SwitchPreference
+            android:key="@string/settings_apps_gray_paused_apps_key"
+            android:title="@string/settings_apps_gray_paused_apps"
+            android:summary="@string/settings_apps_gray_paused_apps_summary"
+            android:defaultValue="true" />
+
+        <SeekBarPreference
+            android:key="@string/settings_apps_paused_apps_opacity_key"
+            android:dependency="@string/settings_apps_gray_paused_apps_key"
+            android:title="@string/settings_apps_paused_apps_opacity"
+            android:defaultValue="50"
+            app:min="10"
+            android:max="100"
+            app:seekBarIncrement="10"
+            app:showSeekBarValue="true" />
+
+        <SwitchPreference
             android:key="@string/settings_apps_hide_private_space_apps_key"
             android:title="@string/settings_apps_hide_private_space_apps"
             android:defaultValue="false" />

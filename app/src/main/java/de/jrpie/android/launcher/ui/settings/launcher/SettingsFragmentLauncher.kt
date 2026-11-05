@@ -57,6 +57,14 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
             LauncherPreferences.apps().keys().hidePausedApps()
         )
         hidePausedApps?.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+        // suspended apps and paused profiles only exist since Android 7
+        for (key in listOf(
+            LauncherPreferences.apps().keys().grayPausedApps(),
+            LauncherPreferences.apps().keys().pausedAppsOpacity()
+        )) {
+            findPreference<androidx.preference.Preference>(key)?.isVisible =
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+        }
     }
 
     override fun onStart() {

@@ -43,13 +43,16 @@ fun ImageView.transformMonochrome(grayscale: Boolean, theme: ColorTheme) {
 }
 
 private val PAUSED_APP_FILTER = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) })
-private const val PAUSED_APP_ALPHA = 0.5f
 
-/** Paused / suspended apps get a gray, faded icon (independent of the monochrome setting). */
+/**
+ * Paused / suspended apps get a gray, faded icon (independent of the monochrome setting),
+ * see apps.gray_paused_apps and apps.paused_apps_opacity.
+ */
 fun ImageView.markPaused(paused: Boolean) {
-    if (paused) {
+    if (paused && LauncherPreferences.apps().grayPausedApps()) {
         this.colorFilter = PAUSED_APP_FILTER
-        this.imageAlpha = (PAUSED_APP_ALPHA * 255).toInt()
+        val opacity = LauncherPreferences.apps().pausedAppsOpacity().coerceIn(0, 100)
+        this.imageAlpha = opacity * 255 / 100
     } else {
         this.imageAlpha = 255
     }
