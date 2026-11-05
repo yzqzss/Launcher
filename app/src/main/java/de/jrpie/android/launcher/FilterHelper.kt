@@ -34,17 +34,26 @@ abstract class FilterHelper {
      * Filters the elements of the list according to the query.
      * The result contains the elements that have a key that start with the query,
      * followed by the elements with a key that contains the query as a substring.
+     *
+     * Keys and query are also compared in romanized form (see [SearchTransliteration]),
+     * e.g. "weixin" or "wx" matches 微信.
      */
     protected fun <T> List<T>.filterByQuery(query: String, keys: (T) -> List<String>): List<T> {
         val normalize = buildNormalizeFunction(query)
         val resultsPrimary: MutableList<T> = ArrayList()
         val resultsSecondary: MutableList<T> = ArrayList()
         val normalizedQuery: String = normalize(query)
+        val queries = listOfNotNull(
+            normalizedQuery,
+            SearchTransliteration.transliterate(query)?.let(normalize)?.takeIf { it.isNotEmpty() }
+        ).distinct()
         for (item in this) {
-            val itemKeys = keys(item).map(normalize)
-            if (itemKeys.any { it.startsWith(normalizedQuery) }) {
+            val itemKeys = keys(item)
+                .flatMap { listOf(it) + SearchTransliteration.searchKeys(it) }
+                .map(normalize)
+            if (itemKeys.any { key -> queries.any { key.startsWith(it) } }) {
                 resultsPrimary.add(item)
-            } else if (itemKeys.any { it.contains(normalizedQuery) }) {
+            } else if (itemKeys.any { key -> queries.any { key.contains(it) } }) {
                 resultsSecondary.add(item)
             }
         }

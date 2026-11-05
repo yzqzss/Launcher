@@ -263,6 +263,9 @@
     <string name="settings_functionality_auto_launch_touch_prevention_system_overlay">使用悬浮窗拦截</string>
     <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">立即打开应用，仅拦截原键盘区域。需要“显示在其他应用的上层”权限。</string>
     <string name="auto_launch_touch_prevention_opening">正在打开 %1$s</string>
+    <string name="settings_functionality_search_transliteration">拼音 / 罗马字搜索</string>
+    <string name="settings_functionality_search_transliteration_disabled">关闭</string>
+    <string name="settings_functionality_search_transliteration_auto">自动（按系统语言）</string>
     <string name="settings_list_layout">应用程序列表样式</string>
     <string name="pin_shortcut_button_bind">绑定到手势</string>
     <string name="list_other_track_play_pause">音乐：播放 / 暂停</string>

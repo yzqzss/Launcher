@@ -191,6 +191,9 @@
     <string name="settings_functionality_auto_launch_touch_prevention_system_overlay">Use floating overlay</string>
     <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">Open the app at once; block only the keyboard area. Needs \"Display over other apps\".</string>
     <string name="auto_launch_touch_prevention_opening">Opening %1$s</string>
+    <string name="settings_functionality_search_transliteration">Search by romanization</string>
+    <string name="settings_functionality_search_transliteration_disabled">Disabled</string>
+    <string name="settings_functionality_search_transliteration_auto">Automatic (system languages)</string>
 
     <string name="settings_functionality_search_web">Search the web</string>
     <string name="settings_functionality_search_web_summary">Press return while searching the app list to launch a web search.</string>

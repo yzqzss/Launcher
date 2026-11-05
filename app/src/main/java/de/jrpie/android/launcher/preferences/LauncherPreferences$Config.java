@@ -86,6 +86,9 @@ import eu.jonahbauer.android.preference.annotations.Preferences;
                         @Preference(name = "search_web", type = boolean.class, description = "false"),
                         @Preference(name = "search_auto_open_keyboard", type = boolean.class, defaultValue = "true"),
                         @Preference(name = "search_auto_close_keyboard", type = boolean.class, defaultValue = "false"),
+                        // ICU transliterator id used to romanize names for search (see SearchTransliteration):
+                        // "" = choose from the system languages, "disabled" = off
+                        @Preference(name = "search_transliteration", type = String.class, defaultValue = ""),
                 }),
                 @PreferenceGroup(name = "enabled_gestures", prefix = "settings_enabled_gestures_", suffix = "_key", value = {
                         @Preference(name = "double_swipe", type = boolean.class, defaultValue = "true"),

@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.preference.PreferenceFragmentCompat
 import de.jrpie.android.launcher.R
+import de.jrpie.android.launcher.SearchTransliteration
 import de.jrpie.android.launcher.actions.lock.LockMethod
 import de.jrpie.android.launcher.actions.openAppsList
 import de.jrpie.android.launcher.preferences.LauncherPreferences
@@ -133,6 +134,18 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
                 .map { x -> x.name }.toTypedArray()
         }
 
+
+        findPreference<androidx.preference.DropDownPreference>(
+            LauncherPreferences.functionality().keys().searchTransliteration()
+        )?.apply {
+            if (!SearchTransliteration.isSupported()) {
+                isVisible = false
+            } else {
+                val options = SearchTransliteration.options(requireContext())
+                entryValues = options.map { it.first }.toTypedArray()
+                entries = options.map { it.second }.toTypedArray()
+            }
+        }
 
         findPreference<androidx.preference.Preference>(
             LauncherPreferences.functionality().keys().searchAutoLaunchTouchPreventionSystemOverlay()
