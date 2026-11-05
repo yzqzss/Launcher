@@ -15,8 +15,9 @@ import java.util.EnumMap
  * Romanization of app and widget names for search (similar to Kvaesitso's IcuStringNormalizer),
  * so that e.g. "weixin" or "wx" finds 微信, "telegram" finds Телеграм and "kamera" finds カメラ.
  *
- * - Romanization: ICU transliterators on Android 10+ (chosen from the system languages by default,
- *   functionality.search_transliteration), otherwise the table of the dict-base pack.
+ * - Romanization: the table of the dict-base pack if it is installed (so it can be updated
+ *   independently of the system), otherwise ICU transliterators on Android 10+ (chosen from the
+ *   system languages by default, functionality.search_transliteration).
  * - Optional [DictionaryPacks]: all readings of Chinese characters with several readings
  *   (音乐 → "yinyue" and "yinle"), readings of Japanese words and kanji (設定 → "settei").
  * - Lenient forms of romanizations per script, see [ScriptRules] (shi/si, g/k, zh/j, tlgrm, rama/ram …).
@@ -130,10 +131,13 @@ object SearchTransliteration {
     /** The current romanizer; resets the caches if the settings or the dictionary packs changed. */
     private fun romanizer(): Romanizer? {
         val pref = preference()
+        val table = DictionaryPacks.get(Language.BASE)
         val id = when {
             pref == DISABLED -> null
+            // an installed table is preferred: it can be updated independently of the system
+            table != null -> "table"
             isIcuAvailable() -> icuId(pref)
-            else -> "table"
+            else -> null
         }
         val newState = "$id/${DictionaryPacks.generation}"
         if (newState != state) {
@@ -142,8 +146,9 @@ object SearchTransliteration {
             keyCache.evictAll()
             romanizer = when {
                 id == null -> null
+                table != null -> TableRomanizer(table)
                 isIcuAvailable() -> IcuRomanizer(id)
-                else -> DictionaryPacks.get(Language.BASE)?.let { TableRomanizer(it) }
+                else -> null
             }
         }
         return romanizer
@@ -252,9 +257,13 @@ object SearchTransliteration {
             DISABLED to context.getString(R.string.settings_functionality_search_transliteration_disabled),
             AUTO to context.getString(R.string.settings_functionality_search_transliteration_auto),
         )
-        if (isIcuAvailable()) {
+        // the system's transliterators are only used if there is no dict-base table
+        if (isIcuAvailable() && DictionaryPacks.get(Language.BASE) == null) {
             options.addAll(localeTransliterators())
         }
+        // keep a value chosen earlier selectable
+        val current = preference()
+        if (options.none { it.first == current }) options.add(current to current)
         return options
     }
 

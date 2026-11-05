@@ -179,10 +179,7 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
         val pref = findPreference<androidx.preference.Preference>(
             getString(R.string.settings_functionality_search_dictionaries_key)
         ) ?: return
-        pref.summary = DictionaryPacks.Language.entries.filter {
-            // the system's transliterators are used on Android 10+
-            it != DictionaryPacks.Language.BASE || !SearchTransliteration.isIcuAvailable()
-        }.joinToString("\n") { language ->
+        pref.summary = DictionaryPacks.Language.entries.joinToString("\n") { language ->
             val name = getString(
                 when (language) {
                     DictionaryPacks.Language.CHINESE -> R.string.settings_functionality_search_dictionary_zh
