@@ -184,12 +184,12 @@
     <string name="settings_enabled_gestures_diagonal_swipe">Diagonal swipe gestures</string>
     <string name="settings_functionality_auto_launch">Launch search results</string>
     <string name="settings_functionality_auto_launch_summary">Press space to disable this feature temporarily.</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_duration">Auto-launch accidental touch prevention (ms)</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_duration_summary">After a search result is auto-launched, block touches for this long so keys you are still typing don\'t hit the app. The keyboard is closed immediately. 0 disables. Not affected by system animation settings.</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_extension">Extension per tap (ms)</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_max_duration">Maximum duration (ms)</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay">Cover keyboard area with system overlay</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">Open the app immediately and cover only the former keyboard area with a floating window on top of it, so the app opens without any delay. Requires the \"Display over other apps\" permission; without it the launcher blocks touches in its own window and opens the app afterwards.</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_duration">Block touches (ms)</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_duration_summary">Ignore touches this long after a search result is auto-launched. 0 disables.</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_extension">Extend per tap (ms)</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_max_duration">Max duration (ms)</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay">Use floating overlay</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">Open the app at once; block only the keyboard area. Needs \"Display over other apps\".</string>
     <string name="auto_launch_touch_prevention_opening">Opening %1$s</string>
 
     <string name="settings_functionality_search_web">Search the web</string>
