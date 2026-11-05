@@ -89,6 +89,8 @@ class AppListActivity : AbstractListActivity() {
         if (privateSpaceVisibility == AppFilter.Companion.AppSetVisibility.EXCLUSIVE) {
             isPrivateSpaceSetUp(this, showToast = true, launchSettings = true)
             if (isPrivateSpaceLocked(this)) {
+                // shows the unlock prompt, which pauses this activity
+                keepOpenOnPause = true
                 togglePrivateSpaceLock(this)
             }
         }
@@ -96,7 +98,13 @@ class AppListActivity : AbstractListActivity() {
         updateLockIcon(isPrivateSpaceLocked(this))
 
         val privateSpaceLocked = (this.applicationContext as Application).privateSpaceLocked
-        privateSpaceLocked.observe(this) { updateLockIcon(it) }
+        var lastLocked: Boolean? = null
+        privateSpaceLocked.observe(this) {
+            updateLockIcon(it)
+            // just unlocked: the prompt (if any) is done, close normally on the next pause
+            if (lastLocked == true && !it) keepOpenOnPause = false
+            lastLocked = it
+        }
 
         val onThemeChanged = (this.applicationContext as Application).onThemeChanged
         lifecycleScope.launch {
@@ -125,6 +133,8 @@ class AppListActivity : AbstractListActivity() {
     override fun setOnClicks() {
         binding.listClose.setOnClickListener { finish() }
         binding.listLock.setOnClickListener {
+            // unlocking shows a prompt, which pauses this activity
+            keepOpenOnPause = isPrivateSpaceLocked(this)
             togglePrivateSpaceLock(this)
             if (privateSpaceVisibility == AppFilter.Companion.AppSetVisibility.EXCLUSIVE) {
                 finish()

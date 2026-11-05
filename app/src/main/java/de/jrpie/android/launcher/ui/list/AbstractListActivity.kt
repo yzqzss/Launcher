@@ -42,6 +42,34 @@ sealed class AbstractListActivity : UIObjectActivity() {
         }
     }
 
+    /**
+     * Set while a system prompt started from this activity is expected to pause it
+     * (the private space unlock prompt, cf. #330), so that it is not closed then.
+     */
+    var keepOpenOnPause = false
+    private var pausedForPrompt = false
+
+    override fun onResume() {
+        super.onResume()
+        if (pausedForPrompt) {
+            // back from the prompt
+            pausedForPrompt = false
+            keepOpenOnPause = false
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        // ensure that the activity closes when an app is launched
+        // and when the user navigates to recent apps
+        if (keepOpenOnPause) {
+            pausedForPrompt = true
+        } else if (!isChangingConfigurations) {
+            finish()
+        }
+    }
+
     companion object {
         const val KEY_FAVORITES_VISIBILITY = "favoritesVisibility"
         const val KEY_PRIVATE_SPACE_VISIBILITY = "privateSpaceVisibility"
