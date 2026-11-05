@@ -9,18 +9,19 @@ import android.util.LruCache
 import androidx.annotation.RequiresApi
 import de.jrpie.android.launcher.DictionaryPacks.Language
 import de.jrpie.android.launcher.preferences.LauncherPreferences
+import java.util.EnumMap
 
 /**
  * Romanization of app and widget names for search (similar to Kvaesitso's IcuStringNormalizer),
  * so that e.g. "weixin" or "wx" finds 微信, "telegram" finds Телеграм and "kamera" finds カメラ.
  *
- * - ICU transliterators (Android 10+), chosen from the system languages by default
- *   (functionality.search_transliteration).
+ * - Romanization: ICU transliterators on Android 10+ (chosen from the system languages by default,
+ *   functionality.search_transliteration), otherwise the table of the dict-base pack.
  * - Optional [DictionaryPacks]: all readings of Chinese characters with several readings
  *   (音乐 → "yinyue" and "yinle"), readings of Japanese words and kanji (設定 → "settei").
- * - Lenient forms of Japanese and Korean romanizations (shi/si, ou/o, g/k, eo/o, …).
- * - Korean: initial consonants (ㅋㅋㅇㅌ → 카카오톡) and Hangul typed on a Latin keyboard
- *   (zkzkdhxhr → 카카오톡).
+ * - Lenient forms of romanizations per script, see [ScriptRules] (shi/si, g/k, zh/j, tlgrm, rama/ram …).
+ * - Korean initial consonants (ㅋㅋㅇㅌ → 카카오톡), text typed with the wrong keyboard layout
+ *   (zkzkdhxhr → 카카오톡, ntktuhfv → телеграм), German / Scandinavian alternative spellings.
  */
 object SearchTransliteration {
     /** Preference value: no transliteration */
@@ -30,58 +31,219 @@ object SearchTransliteration {
     const val AUTO = ""
 
     private const val BASE_ID = "Any-Latin;Latin-ASCII"
+
+    /** BGN rules give the usual romanizations of Russian and Greek (Яндекс → Yandeks, not Andeks) */
+    private const val PREFERRED_BASE_ID = "ru-ru_Latn/BGN;el-el_Latn/BGN;$BASE_ID"
+
     private val WORD_SEPARATOR = Regex("[^\\p{L}\\p{N}]+")
+    private val SPACES = Regex(" +")
+
+    private const val MIN_LAYOUT_ROMANIZATION_LENGTH = 4
 
     /** Maximum number of reading combinations per name and language */
     private const val MAX_VARIANTS = 16
 
-    fun isSupported(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+    /** Lenient forms are only compared with lenient forms of the same kind. */
+    enum class Lenient(val apply: (String) -> String) {
+        JAPANESE(ScriptRules::lenientJapanese),
+        KOREAN(ScriptRules::lenientKorean),
+        CYRILLIC(ScriptRules::lenientCyrillic),
+        ABJAD(ScriptRules::lenientAbjad),
+        INDIC(ScriptRules::lenientIndic),
+    }
 
-    private fun isEnabled(): Boolean =
-        LauncherPreferences.functionality().searchTransliteration() != DISABLED
+    /** Search forms of a name or a query. */
+    class Forms(val exact: List<String>, val lenient: Map<Lenient, List<String>>) {
+        companion object {
+            val EMPTY = Forms(emptyList(), emptyMap())
+        }
+    }
 
-    /** @return the romanized text, or null if transliteration is disabled or unsupported */
-    fun transliterate(text: String): String? {
-        if (!isSupported()) return null
-        return Impl.transliterate(text)
+    /** Whether the system provides ICU transliterators (otherwise the dict-base pack is needed). */
+    fun isIcuAvailable(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+
+    private fun preference(): String = LauncherPreferences.functionality().searchTransliteration() ?: AUTO
+
+    private fun isEnabled(): Boolean = preference() != DISABLED
+
+    private interface Romanizer {
+        fun romanize(text: String): String
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private class IcuRomanizer(id: String) : Romanizer {
+        private val transliterator = listOf(id, PREFERRED_BASE_ID, BASE_ID).firstNotNullOf {
+            try {
+                Transliterator.getInstance(it)
+            } catch (_: IllegalArgumentException) {
+                null
+            }
+        }
+
+        override fun romanize(text: String): String = transliterator.transliterate(text)
     }
 
     /**
-     * Search forms of a name or a query.
-     * [lenient] forms are only compared with each other, so that e.g. the query "chi"
-     * (lenient "ti") doesn't match the pinyin "ti".
+     * Romanization with the table of the dict-base pack (generated from ICU, so the results are
+     * mostly the same): longest match of up to 3 characters, Hangul is computed.
      */
-    class Forms(val exact: List<String>, val lenient: List<String>) {
-        companion object {
-            val EMPTY = Forms(emptyList(), emptyList())
+    private class TableRomanizer(private val table: DictionaryPacks.Dictionary) : Romanizer {
+        override fun romanize(text: String): String {
+            val sb = StringBuilder()
+            var doubleNext = false
+            var i = 0
+            while (i < text.length) {
+                val cp = text.codePointAt(i)
+                if (cp == 'っ'.code || cp == 'ッ'.code) {
+                    doubleNext = true; i++; continue
+                }
+                if (cp == 'ー'.code) {
+                    sb.lastOrNull { it in "aeiou" }?.let { sb.append(it) }
+                    i++; continue
+                }
+                var romanized: String? = null
+                var length = Character.charCount(cp)
+                if (cp <= 0xFFFF && Hangul.isSyllable(cp.toChar())) {
+                    romanized = Hangul.romanize(cp.toChar())
+                } else {
+                    for (len in minOf(3, text.length - i) downTo 1) {
+                        val r = table.words[text.substring(i, i + len)] ?: continue
+                        romanized = r[0]; length = len
+                        break
+                    }
+                }
+                val r = romanized ?: text.substring(i, i + length)
+                if (doubleNext && r.isNotEmpty() && r[0] !in "aeiou") sb.append(r[0])
+                doubleNext = false
+                if (ScriptRules.isHan(cp)) sb.append(' ').append(r).append(' ') else sb.append(r)
+                i += length
+            }
+            return sb.toString().replace(SPACES, " ").trim()
         }
+    }
+
+    private var state: String? = null
+    private var romanizer: Romanizer? = null
+    private val cache = LruCache<String, String>(4000)
+    private val keyCache = LruCache<String, Forms>(2000)
+
+    /** The current romanizer; resets the caches if the settings or the dictionary packs changed. */
+    private fun romanizer(): Romanizer? {
+        val pref = preference()
+        val id = when {
+            pref == DISABLED -> null
+            isIcuAvailable() -> icuId(pref)
+            else -> "table"
+        }
+        val newState = "$id/${DictionaryPacks.generation}"
+        if (newState != state) {
+            state = newState
+            cache.evictAll()
+            keyCache.evictAll()
+            romanizer = when {
+                id == null -> null
+                isIcuAvailable() -> IcuRomanizer(id)
+                else -> DictionaryPacks.get(Language.BASE)?.let { TableRomanizer(it) }
+            }
+        }
+        return romanizer
+    }
+
+    /** @return the romanized text, or null if transliteration is disabled or unavailable */
+    @Synchronized
+    fun transliterate(text: String): String? {
+        val r = romanizer() ?: return null
+        return cache.get(text) ?: r.romanize(text).also { cache.put(text, it) }
     }
 
     /** Additional search keys for a name, e.g. 微信 → "wei xin", "wx". */
+    @Synchronized
     fun searchKeys(text: String): Forms {
         if (!isEnabled()) return Forms.EMPTY
-        if (!isSupported()) {
-            return if (Hangul.containsSyllables(text)) {
-                Forms(listOf(Hangul.initialConsonants(text)), emptyList())
-            } else Forms.EMPTY
+        romanizer() // resets the caches if needed
+        keyCache.get(text)?.let { return it }
+
+        val romanized = transliterate(text)
+        val exact = LinkedHashSet<String>()
+        val lenient = EnumMap<Lenient, MutableSet<String>>(Lenient::class.java)
+        fun addLenient(kind: Lenient, s: String) {
+            lenient.getOrPut(kind) { LinkedHashSet() }.add(kind.apply(s))
         }
-        return Impl.searchKeys(text)
+
+        val hasHan = ScriptRules.any(text, ScriptRules::isHan)
+        val hasKana = ScriptRules.any(text, ScriptRules::isKana)
+
+        // words separated by spaces (e.g. pinyin): also match the initials
+        val spaced = LinkedHashSet<String>()
+        if (romanized != null && romanized != text) spaced.add(romanized)
+        if (hasHan && romanized != null) {
+            DictionaryPacks.get(Language.CHINESE)?.let { spaced.addAll(chineseVariants(text, it)) }
+        }
+        for (key in spaced) {
+            exact.add(key)
+            exact.add(initials(key))
+        }
+
+        ScriptRules.latinAlternatives(text)?.let { exact.add(it) }
+
+        if (romanized != null) {
+            val japanese = ArrayList<String>()
+            if (hasKana) japanese.add(romanized)
+            DictionaryPacks.get(Language.JAPANESE)?.let { dict ->
+                if (hasKana || (hasHan && looksJapanese(text, dict))) {
+                    japanese.addAll(japaneseVariants(text, dict))
+                }
+            }
+            for (key in japanese) {
+                exact.add(key)
+                addLenient(Lenient.JAPANESE, key)
+            }
+            if (ScriptRules.any(text, ScriptRules::isCyrillic)) addLenient(Lenient.CYRILLIC, romanized)
+            if (ScriptRules.any(text, ScriptRules::isAbjad)) addLenient(Lenient.ABJAD, romanized)
+            if (ScriptRules.any(text, ScriptRules::isIndic)) addLenient(Lenient.INDIC, romanized)
+        }
+
+        if (Hangul.containsSyllables(text)) {
+            exact.add(Hangul.initialConsonants(text))
+            romanized?.let { addLenient(Lenient.KOREAN, it) }
+        }
+
+        exact.remove(text)
+        exact.remove("")
+        val forms = Forms(
+            exact.toList(),
+            lenient.mapValues { (_, v) -> v.filter { it.isNotEmpty() } }
+        )
+        keyCache.put(text, forms)
+        return forms
     }
 
     /** Additional forms of the query to search for. */
+    @Synchronized
     fun queryVariants(query: String): Forms {
         if (!isEnabled()) return Forms.EMPTY
-        val exact = mutableListOf<String>()
-        val lenient = mutableListOf<String>()
-        if (isSupported()) {
-            Impl.transliterate(query)?.let {
-                exact.add(it)
-                lenient.add(lenientJapanese(it.lowercase()))
-                lenient.add(lenientKorean(it.lowercase()))
+        val exact = LinkedHashSet<String>()
+        val romanized = transliterate(query)
+        romanized?.let { exact.add(it) }
+
+        val latin = (romanized ?: query).lowercase()
+        val lenient = Lenient.entries.associateWith { listOf(it.apply(latin)) }
+
+        val trimmed = query.trim()
+        Hangul.fromDubeolsikKeys(trimmed)?.let { exact.add(it) }
+        for (alternative in KeyboardLayouts.alternatives(trimmed)) {
+            exact.add(alternative)
+            // e.g. "ntktuhfv" → телеграм → "telegram". Only for longer input: short input
+            // can be read in many layouts, and the romanizations of some (e.g. Arabic) are much
+            // shorter than what was typed, which would match far too much.
+            if (trimmed.length >= MIN_LAYOUT_ROMANIZATION_LENGTH) {
+                transliterate(alternative)
+                    ?.takeIf { r -> r.count { it.isLetter() } >= trimmed.count { it.isLetter() } }
+                    ?.let { exact.add(it) }
             }
         }
-        Hangul.fromDubeolsikKeys(query.trim())?.let { exact.add(it) }
-        return Forms(exact.distinct(), lenient.distinct())
+        exact.remove(query)
+        return Forms(exact.toList(), lenient)
     }
 
     /** (value, label) pairs for the settings: disabled, automatic and those of the system languages */
@@ -90,37 +252,14 @@ object SearchTransliteration {
             DISABLED to context.getString(R.string.settings_functionality_search_transliteration_disabled),
             AUTO to context.getString(R.string.settings_functionality_search_transliteration_auto),
         )
-        if (isSupported()) {
-            options.addAll(Impl.localeTransliterators())
+        if (isIcuAvailable()) {
+            options.addAll(localeTransliterators())
         }
         return options
     }
 
     private fun initials(romanized: String): String =
         romanized.split(WORD_SEPARATOR).filter { it.isNotEmpty() }.joinToString("") { it.take(1) }
-
-    /** Hepburn and Kunrei-shiki spellings and long vowels are treated alike. */
-    private fun lenientJapanese(s: String): String = s
-        .replace("shi", "si").replace("sh", "sy")
-        .replace("chi", "ti").replace("ch", "ty")
-        .replace("tsu", "tu").replace("fu", "hu")
-        .replace("ji", "zi").replace("j", "zy")
-        .replace("ou", "o").replace("oo", "o").replace("uu", "u")
-        .replace(DOUBLE_CONSONANT, "$1").replace("'", "")
-
-    private val DOUBLE_CONSONANT = Regex("([kstpgzdbhfmrcy])\\1")
-
-    /** Common variants of Korean romanizations are treated alike. */
-    private fun lenientKorean(s: String): String = s
-        .replace("eo", "o").replace("eu", "u").replace("ae", "e")
-        .replace('g', 'k').replace('d', 't').replace('b', 'p').replace('r', 'l')
-
-    private fun isHan(cp: Int): Boolean =
-        Character.UnicodeScript.of(cp) == Character.UnicodeScript.HAN
-
-    private fun isKana(cp: Int): Boolean = Character.UnicodeScript.of(cp).let {
-        it == Character.UnicodeScript.HIRAGANA || it == Character.UnicodeScript.KATAKANA
-    } || cp == 'ー'.code
 
     /** All combinations of the alternatives of each part, at most [MAX_VARIANTS]. */
     private fun combinations(parts: List<List<String>>, separator: String): List<String> {
@@ -138,215 +277,138 @@ object SearchTransliteration {
         return result
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
-    private object Impl {
-        private var currentId: String? = null
-        private var currentGeneration = -1
-        private var transliterator: Transliterator? = null
-        private val cache = LruCache<String, String>(4000)
-        private val keyCache = LruCache<String, Forms>(2000)
-
-        private var autoIdLocales: String? = null
-        private var autoId: String = BASE_ID
-
-        /** Resets the caches if the settings or the dictionary packs changed. */
-        private fun update(): Transliterator? {
-            val id = transliteratorId()
-            if (id != currentId || DictionaryPacks.generation != currentGeneration) {
-                currentId = id
-                currentGeneration = DictionaryPacks.generation
-                cache.evictAll()
-                keyCache.evictAll()
-                transliterator = id?.let {
-                    try {
-                        Transliterator.getInstance(it)
-                    } catch (_: IllegalArgumentException) {
-                        Transliterator.getInstance(BASE_ID)
-                    }
-                }
+    /** Every reading of characters with several readings: 音乐 → "yin le", "yin yue" */
+    private fun chineseVariants(text: String, dict: DictionaryPacks.Dictionary): List<String> {
+        val parts = ArrayList<List<String>>()
+        val other = StringBuilder()
+        fun flushOther() {
+            if (other.isNotEmpty()) {
+                transliterate(other.toString())?.trim()?.let { if (it.isNotEmpty()) parts.add(listOf(it)) }
+                other.clear()
             }
-            return transliterator
         }
-
-        @Synchronized
-        fun transliterate(text: String): String? {
-            val t = update() ?: return null
-            return cache.get(text) ?: t.transliterate(text).also { cache.put(text, it) }
-        }
-
-        @Synchronized
-        fun searchKeys(text: String): Forms {
-            if (update() == null) return Forms.EMPTY
-            keyCache.get(text)?.let { return it }
-
-            val romanized = transliterate(text) ?: return Forms.EMPTY
-            val exact = LinkedHashSet<String>()
-            val lenient = LinkedHashSet<String>()
-
-            val codePoints = text.codePoints().toArray()
-            val hasHan = codePoints.any(::isHan)
-            val hasKana = codePoints.any(::isKana)
-
-            // words separated by spaces (e.g. pinyin): also match the initials
-            val spaced = LinkedHashSet<String>()
-            if (romanized != text) spaced.add(romanized)
-            if (hasHan) {
-                DictionaryPacks.get(Language.CHINESE)?.let { spaced.addAll(chineseVariants(text, it)) }
-            }
-            for (key in spaced) {
-                exact.add(key)
-                exact.add(initials(key))
-            }
-
-            val japanese = ArrayList<String>()
-            if (hasKana) japanese.add(romanized)
-            DictionaryPacks.get(Language.JAPANESE)?.let { dict ->
-                if (hasKana || (hasHan && looksJapanese(text, dict))) {
-                    japanese.addAll(japaneseVariants(text, dict))
-                }
-            }
-            for (key in japanese) {
-                exact.add(key)
-                lenient.add(lenientJapanese(key.lowercase()))
-            }
-
-            if (Hangul.containsSyllables(text)) {
-                lenient.add(lenientKorean(romanized.lowercase()))
-                exact.add(Hangul.initialConsonants(text))
-            }
-            exact.remove(text)
-            exact.remove("")
-            lenient.remove("")
-            return Forms(exact.toList(), lenient.toList()).also { keyCache.put(text, it) }
-        }
-
-        /**
-         * A name without kana is only read as Japanese if at least half of it consists of
-         * Japanese words (e.g. 設定, 天気), otherwise Chinese names (微信) would get lots of
-         * meaningless readings.
-         */
-        private fun looksJapanese(text: String, dict: DictionaryPacks.Dictionary): Boolean {
-            var covered = 0
-            var i = 0
-            while (i < text.length) {
-                val len = (minOf(dict.maxWordLength, text.length - i) downTo 2)
-                    .firstOrNull { dict.words.containsKey(text.substring(i, i + it)) }
-                if (len != null) {
-                    covered += len; i += len
-                } else {
-                    i++
-                }
-            }
-            return covered * 2 >= text.count { isHan(it.code) }
-        }
-
-        /** Every reading of characters with several readings: 音乐 → "yin le", "yin yue" */
-        private fun chineseVariants(text: String, dict: DictionaryPacks.Dictionary): List<String> {
-            val parts = ArrayList<List<String>>()
-            val other = StringBuilder()
-            fun flushOther() {
-                if (other.isNotEmpty()) {
-                    transliterate(other.toString())?.trim()?.let { if (it.isNotEmpty()) parts.add(listOf(it)) }
-                    other.clear()
-                }
-            }
-            text.codePoints().forEach { cp ->
-                if (isHan(cp)) {
-                    flushOther()
-                    val s = String(Character.toChars(cp))
-                    val readings = dict.characters[cp] ?: listOfNotNull(transliterate(s)?.trim())
-                    if (readings.isNotEmpty()) parts.add(readings)
-                } else {
-                    other.appendCodePoint(cp)
-                }
-            }
-            flushOther()
-            return combinations(parts, " ")
-        }
-
-        /**
-         * Japanese readings: longest match against the word list, otherwise the readings of the
-         * single kanji. 設定 → "settei"
-         */
-        private fun japaneseVariants(text: String, dict: DictionaryPacks.Dictionary): List<String> {
-            val parts = ArrayList<List<String>>()
-            val other = StringBuilder()
-            fun flushOther() {
-                if (other.isNotEmpty()) {
-                    parts.add(listOf(other.toString()))
-                    other.clear()
-                }
-            }
-            var i = 0
-            while (i < text.length) {
-                var matched = false
-                for (len in minOf(dict.maxWordLength, text.length - i) downTo 1) {
-                    val readings = dict.words[text.substring(i, i + len)] ?: continue
-                    if (len == 1 && !isHan(text[i].code)) break
-                    flushOther()
-                    val kanjiReadings = if (len == 1) dict.characters[text.codePointAt(i)].orEmpty() else emptyList()
-                    parts.add((readings + kanjiReadings).distinct())
-                    i += len
-                    matched = true
-                    break
-                }
-                if (matched) continue
-                val cp = text.codePointAt(i)
+        var i = 0
+        while (i < text.length) {
+            val cp = text.codePointAt(i)
+            val length = Character.charCount(cp)
+            if (ScriptRules.isHan(cp)) {
+                flushOther()
                 val readings = dict.characters[cp]
-                if (readings != null) {
-                    flushOther()
-                    parts.add(readings)
-                } else {
-                    other.appendCodePoint(cp)
-                }
-                i += Character.charCount(cp)
+                    ?: listOfNotNull(transliterate(text.substring(i, i + length))?.trim())
+                if (readings.isNotEmpty()) parts.add(readings)
+            } else {
+                other.append(text, i, i + length)
             }
-            flushOther()
-            return combinations(parts, "").mapNotNull { transliterate(it) }
+            i += length
         }
+        flushOther()
+        return combinations(parts, " ")
+    }
 
-        private fun transliteratorId(): String? {
-            val pref = LauncherPreferences.functionality().searchTransliteration() ?: AUTO
-            return when {
-                pref == DISABLED -> null
-                pref.isNotBlank() -> "$pref;$BASE_ID"
-                else -> automaticId()
+    /**
+     * A name without kana is only read as Japanese if at least half of it consists of
+     * Japanese words (e.g. 設定, 天気), otherwise Chinese names (微信) would get lots of
+     * meaningless readings.
+     */
+    private fun looksJapanese(text: String, dict: DictionaryPacks.Dictionary): Boolean {
+        var covered = 0
+        var i = 0
+        while (i < text.length) {
+            val len = (minOf(dict.maxWordLength, text.length - i) downTo 2)
+                .firstOrNull { dict.words.containsKey(text.substring(i, i + it)) }
+            if (len != null) {
+                covered += len; i += len
+            } else {
+                i++
             }
         }
+        return covered * 2 >= text.count { ScriptRules.isHan(it.code) }
+    }
 
-        /** Like Kvaesitso: the first language or script specific transliterator of the system languages. */
-        private fun automaticId(): String {
-            val tags = Resources.getSystem().configuration.locales.toLanguageTags()
-            if (tags != autoIdLocales) {
-                autoIdLocales = tags
-                autoId = localeTransliterators().firstOrNull()?.first?.let { "$it;$BASE_ID" } ?: BASE_ID
+    /**
+     * Japanese readings: longest match against the word list, otherwise the readings of the
+     * single kanji. 設定 → "settei"
+     */
+    private fun japaneseVariants(text: String, dict: DictionaryPacks.Dictionary): List<String> {
+        val parts = ArrayList<List<String>>()
+        val other = StringBuilder()
+        fun flushOther() {
+            if (other.isNotEmpty()) {
+                parts.add(listOf(other.toString()))
+                other.clear()
             }
-            return autoId
         }
+        var i = 0
+        while (i < text.length) {
+            var matched = false
+            for (len in minOf(dict.maxWordLength, text.length - i) downTo 1) {
+                val readings = dict.words[text.substring(i, i + len)] ?: continue
+                if (len == 1 && !ScriptRules.isHan(text.codePointAt(i))) break
+                flushOther()
+                val kanjiReadings =
+                    if (len == 1) dict.characters[text.codePointAt(i)].orEmpty() else emptyList()
+                parts.add((readings + kanjiReadings).distinct())
+                i += len
+                matched = true
+                break
+            }
+            if (matched) continue
+            val cp = text.codePointAt(i)
+            val readings = dict.characters[cp]
+            if (readings != null) {
+                flushOther()
+                parts.add(readings)
+            } else {
+                other.appendCodePoint(cp)
+            }
+            i += Character.charCount(cp)
+        }
+        flushOther()
+        return combinations(parts, "").mapNotNull { transliterate(it) }
+    }
 
-        /** (transliterator id, label) for the languages and scripts of the system languages */
-        fun localeTransliterators(): List<Pair<String, String>> {
-            val locales = Resources.getSystem().configuration.locales
-            val availableIds = Transliterator.getAvailableIDs().toList()
-            val result = linkedMapOf<String, String>()
-            val languages = mutableSetOf<String>()
-            val scripts = mutableSetOf<String>()
-            for (i in 0 until locales.size()) {
-                val locale = ULocale.addLikelySubtags(ULocale.forLocale(locales.get(i)))
-                if (languages.add(locale.language)) {
-                    val prefix = "${locale.language}-${locale.language}_Latn"
-                    availableIds.filter { it.startsWith(prefix) }.forEach {
-                        result[it] = "${locale.displayLanguage.replaceFirstChar(Char::uppercase)} ($it)"
-                    }
-                }
-                if (locale.script.isNotEmpty() && scripts.add(locale.script)) {
-                    val prefix = "${locale.script}-Latn"
-                    availableIds.filter { it.startsWith(prefix) }.forEach {
-                        result[it] = "${locale.displayScript.replaceFirstChar(Char::uppercase)} ($it)"
-                    }
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun icuId(pref: String): String =
+        if (pref.isNotBlank()) "$pref;$PREFERRED_BASE_ID" else automaticId()
+
+    private var autoIdLocales: String? = null
+    private var autoId: String = PREFERRED_BASE_ID
+
+    /** Like Kvaesitso: the first language or script specific transliterator of the system languages. */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun automaticId(): String {
+        val tags = Resources.getSystem().configuration.locales.toLanguageTags()
+        if (tags != autoIdLocales) {
+            autoIdLocales = tags
+            autoId = localeTransliterators().firstOrNull()?.first
+                ?.let { "$it;$PREFERRED_BASE_ID" } ?: PREFERRED_BASE_ID
+        }
+        return autoId
+    }
+
+    /** (transliterator id, label) for the languages and scripts of the system languages */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun localeTransliterators(): List<Pair<String, String>> {
+        val locales = Resources.getSystem().configuration.locales
+        val availableIds = Transliterator.getAvailableIDs().toList()
+        val result = linkedMapOf<String, String>()
+        val languages = mutableSetOf<String>()
+        val scripts = mutableSetOf<String>()
+        for (i in 0 until locales.size()) {
+            val locale = ULocale.addLikelySubtags(ULocale.forLocale(locales.get(i)))
+            if (languages.add(locale.language)) {
+                val prefix = "${locale.language}-${locale.language}_Latn"
+                availableIds.filter { it.startsWith(prefix) }.forEach {
+                    result[it] = "${locale.displayLanguage.replaceFirstChar(Char::uppercase)} ($it)"
                 }
             }
-            return result.map { it.key to it.value }
+            if (locale.script.isNotEmpty() && scripts.add(locale.script)) {
+                val prefix = "${locale.script}-Latn"
+                availableIds.filter { it.startsWith(prefix) }.forEach {
+                    result[it] = "${locale.displayScript.replaceFirstChar(Char::uppercase)} ($it)"
+                }
+            }
         }
+        return result.map { it.key to it.value }
     }
 }

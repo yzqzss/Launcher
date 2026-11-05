@@ -269,6 +269,7 @@
     <string name="settings_functionality_search_dictionaries">搜索词典包</string>
     <string name="settings_functionality_search_dictionary_zh">中文（多音字）</string>
     <string name="settings_functionality_search_dictionary_ja">日文（汉字读音）</string>
+    <string name="settings_functionality_search_dictionary_base">转写表（Android 10 以下需要）</string>
     <string name="settings_functionality_search_dictionary_installed">版本 %1$s</string>
     <string name="settings_functionality_search_dictionary_not_installed">未安装</string>
     <string name="settings_list_layout">应用程序列表样式</string>

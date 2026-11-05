@@ -141,13 +141,9 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
         findPreference<androidx.preference.DropDownPreference>(
             LauncherPreferences.functionality().keys().searchTransliteration()
         )?.apply {
-            if (!SearchTransliteration.isSupported()) {
-                isVisible = false
-            } else {
-                val options = SearchTransliteration.options(requireContext())
-                entryValues = options.map { it.first }.toTypedArray()
-                entries = options.map { it.second }.toTypedArray()
-            }
+            val options = SearchTransliteration.options(requireContext())
+            entryValues = options.map { it.first }.toTypedArray()
+            entries = options.map { it.second }.toTypedArray()
         }
 
         findPreference<androidx.preference.Preference>(
@@ -183,15 +179,15 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
         val pref = findPreference<androidx.preference.Preference>(
             getString(R.string.settings_functionality_search_dictionaries_key)
         ) ?: return
-        if (!SearchTransliteration.isSupported()) {
-            pref.isVisible = false
-            return
-        }
-        pref.summary = DictionaryPacks.Language.entries.joinToString("\n") { language ->
+        pref.summary = DictionaryPacks.Language.entries.filter {
+            // the system's transliterators are used on Android 10+
+            it != DictionaryPacks.Language.BASE || !SearchTransliteration.isIcuAvailable()
+        }.joinToString("\n") { language ->
             val name = getString(
                 when (language) {
                     DictionaryPacks.Language.CHINESE -> R.string.settings_functionality_search_dictionary_zh
                     DictionaryPacks.Language.JAPANESE -> R.string.settings_functionality_search_dictionary_ja
+                    DictionaryPacks.Language.BASE -> R.string.settings_functionality_search_dictionary_base
                 }
             )
             val status = DictionaryPacks.get(language)?.let {

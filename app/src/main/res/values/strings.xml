@@ -197,6 +197,7 @@
     <string name="settings_functionality_search_dictionaries">Search dictionary packs</string>
     <string name="settings_functionality_search_dictionary_zh">Chinese (polyphonic characters)</string>
     <string name="settings_functionality_search_dictionary_ja">Japanese (kanji readings)</string>
+    <string name="settings_functionality_search_dictionary_base">Transliteration table (needed below Android 10)</string>
     <string name="settings_functionality_search_dictionary_installed">version %1$s</string>
     <string name="settings_functionality_search_dictionary_not_installed">not installed</string>
 

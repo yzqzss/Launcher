@@ -7,11 +7,13 @@ import kotlin.text.Regex.Companion.escape
 
 abstract class FilterHelper {
     private fun unicodeNormalize(s: String): String {
+        // letters that are written differently but should be found alike, see [ScriptRules.fold]
+        val folded = ScriptRules.fold(s.lowercase(Locale.ROOT))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             val normalizer = Normalizer2.getNFKDInstance()
-            return normalizer.normalize(s.lowercase(Locale.ROOT))
+            return normalizer.normalize(folded)
         }
-        return s.lowercase(Locale.ROOT)
+        return java.text.Normalizer.normalize(folded, java.text.Normalizer.Form.NFKD)
     }
 
     private fun buildNormalizeFunction(query: String): (String) -> String {
@@ -46,19 +48,25 @@ abstract class FilterHelper {
         val queryForms = SearchTransliteration.queryVariants(query)
         val queries = (listOf(normalizedQuery) + queryForms.exact.map(normalize).filter { it.isNotEmpty() })
             .distinct()
-        val lenientQueries = queryForms.lenient.map(normalize).filter { it.isNotEmpty() }.distinct()
+        val lenientQueries = queryForms.lenient.mapValues { (_, forms) ->
+            forms.map(normalize).filter { it.isNotEmpty() }.distinct()
+        }
         for (item in this) {
             val exactKeys = ArrayList<String>()
-            val lenientKeys = ArrayList<String>()
+            val lenientKeys = ArrayList<Pair<SearchTransliteration.Lenient, String>>()
             for (key in keys(item)) {
                 exactKeys.add(normalize(key))
                 val forms = SearchTransliteration.searchKeys(key)
                 forms.exact.mapTo(exactKeys, normalize)
-                forms.lenient.mapTo(lenientKeys, normalize)
+                for ((kind, lenient) in forms.lenient) {
+                    lenient.mapTo(lenientKeys) { kind to normalize(it) }
+                }
             }
             fun matches(predicate: (String, String) -> Boolean) =
                 exactKeys.any { key -> queries.any { predicate(key, it) } } ||
-                        lenientKeys.any { key -> lenientQueries.any { predicate(key, it) } }
+                        lenientKeys.any { (kind, key) ->
+                            lenientQueries[kind].orEmpty().any { predicate(key, it) }
+                        }
             if (matches { key, q -> key.startsWith(q) }) {
                 resultsPrimary.add(item)
             } else if (matches { key, q -> key.contains(q) }) {

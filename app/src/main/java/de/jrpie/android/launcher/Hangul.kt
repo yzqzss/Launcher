@@ -33,6 +33,25 @@ object Hangul {
 
     fun containsSyllables(text: String): Boolean = text.any(::isSyllable)
 
+    private val CHO_LATIN = listOf(
+        "g", "kk", "n", "d", "tt", "r", "m", "b", "pp", "s", "ss", "", "j", "jj", "ch", "k", "t", "p", "h"
+    )
+    private val JUNG_LATIN = listOf(
+        "a", "ae", "ya", "yae", "eo", "e", "yeo", "ye", "o", "wa", "wae",
+        "oe", "yo", "u", "wo", "we", "wi", "yu", "eu", "ui", "i"
+    )
+    private val JONG_LATIN = listOf(
+        "", "g", "kk", "gs", "n", "nj", "nh", "d", "l", "lg", "lm", "lb", "ls", "lt", "lp", "lh",
+        "m", "b", "bs", "s", "ss", "ng", "j", "ch", "k", "t", "p", "h"
+    )
+
+    /** Revised Romanization of one syllable, letter by letter like ICU (톡 → "tog"). */
+    fun romanize(c: Char): String {
+        if (!isSyllable(c)) return c.toString()
+        val index = c.code - SYLLABLE_FIRST
+        return CHO_LATIN[index / (21 * 28)] + JUNG_LATIN[index % (21 * 28) / 28] + JONG_LATIN[index % 28]
+    }
+
     /** Initial consonants (초성), e.g. 카카오톡 → ㅋㅋㅇㅌ. Other characters are kept. */
     fun initialConsonants(text: String): String = text.map { c ->
         if (isSyllable(c)) CHO[(c.code - SYLLABLE_FIRST) / (21 * 28)] else c
