@@ -3,7 +3,9 @@ package de.jrpie.android.launcher.ui.settings.launcher
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import androidx.preference.PreferenceFragmentCompat
 import de.jrpie.android.launcher.R
 import de.jrpie.android.launcher.actions.lock.LockMethod
@@ -11,6 +13,7 @@ import de.jrpie.android.launcher.actions.openAppsList
 import de.jrpie.android.launcher.preferences.LauncherPreferences
 import de.jrpie.android.launcher.preferences.theme.ColorTheme
 import de.jrpie.android.launcher.setDefaultHomeScreen
+import de.jrpie.android.launcher.ui.list.apps.AutoLaunchTouchPrevention
 import de.jrpie.android.launcher.ui.widgets.manage.ManageWidgetPanelsActivity
 import de.jrpie.android.launcher.ui.widgets.manage.ManageWidgetsActivity
 
@@ -130,6 +133,22 @@ class SettingsFragmentLauncher : PreferenceFragmentCompat() {
                 .map { x -> x.name }.toTypedArray()
         }
 
+
+        findPreference<androidx.preference.Preference>(
+            LauncherPreferences.functionality().keys().searchAutoLaunchTouchPreventionSystemOverlay()
+        )?.setOnPreferenceChangeListener { _, newValue ->
+            if (newValue == true && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                !AutoLaunchTouchPrevention.canUseSystemOverlay(requireContext())
+            ) {
+                startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + requireContext().packageName)
+                    )
+                )
+            }
+            true
+        }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             lockMethod?.isVisible = false

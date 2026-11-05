@@ -104,33 +104,39 @@
             android:title="@string/settings_functionality_auto_launch"
             android:summary="@string/settings_functionality_auto_launch_summary" />
         <SeekBarPreference
-            android:key="@string/settings_functionality_search_auto_launch_guard_duration_key"
+            android:key="@string/settings_functionality_search_auto_launch_touch_prevention_duration_key"
             android:dependency="@string/settings_functionality_search_auto_launch_key"
             android:defaultValue="300"
             app:min="0"
             android:max="1000"
             app:seekBarIncrement="50"
-            android:title="@string/settings_functionality_auto_launch_guard_duration"
-            android:summary="@string/settings_functionality_auto_launch_guard_duration_summary"
+            android:title="@string/settings_functionality_auto_launch_touch_prevention_duration"
+            android:summary="@string/settings_functionality_auto_launch_touch_prevention_duration_summary"
             app:showSeekBarValue="true" />
         <SeekBarPreference
-            android:key="@string/settings_functionality_search_auto_launch_guard_extension_key"
+            android:key="@string/settings_functionality_search_auto_launch_touch_prevention_extension_key"
             android:dependency="@string/settings_functionality_search_auto_launch_key"
             android:defaultValue="100"
             app:min="0"
             android:max="500"
             app:seekBarIncrement="50"
-            android:title="@string/settings_functionality_auto_launch_guard_extension"
+            android:title="@string/settings_functionality_auto_launch_touch_prevention_extension"
             app:showSeekBarValue="true" />
         <SeekBarPreference
-            android:key="@string/settings_functionality_search_auto_launch_guard_max_duration_key"
+            android:key="@string/settings_functionality_search_auto_launch_touch_prevention_max_duration_key"
             android:dependency="@string/settings_functionality_search_auto_launch_key"
             android:defaultValue="1500"
             app:min="100"
             android:max="3000"
             app:seekBarIncrement="100"
-            android:title="@string/settings_functionality_auto_launch_guard_max_duration"
+            android:title="@string/settings_functionality_auto_launch_touch_prevention_max_duration"
             app:showSeekBarValue="true" />
+        <SwitchPreference
+            android:key="@string/settings_functionality_search_auto_launch_touch_prevention_system_overlay_key"
+            android:dependency="@string/settings_functionality_search_auto_launch_key"
+            android:defaultValue="false"
+            android:title="@string/settings_functionality_auto_launch_touch_prevention_system_overlay"
+            android:summary="@string/settings_functionality_auto_launch_touch_prevention_system_overlay_summary" />
         <SwitchPreference
             android:key="@string/settings_functionality_search_web_key"
             android:title="@string/settings_functionality_search_web"

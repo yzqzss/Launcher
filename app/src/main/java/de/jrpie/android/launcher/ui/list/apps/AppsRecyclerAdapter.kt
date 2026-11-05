@@ -10,7 +10,6 @@ import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
@@ -61,8 +60,8 @@ class AppsRecyclerAdapter(
     // temporarily disable auto launch
     var disableAutoLaunch: Boolean = false
 
-    // pending auto launch, see [SearchLaunchGuard]
-    private var launchGuard: SearchLaunchGuard? = null
+    // active auto-launch accidental touch prevention, see [AutoLaunchTouchPrevention]
+    private var touchPrevention: AutoLaunchTouchPrevention? = null
 
     init {
         apps.observe(this.activity as AppCompatActivity) {
@@ -238,7 +237,7 @@ class AppsRecyclerAdapter(
 
     fun selectItem(pos: Int, rect: Rect = Rect()) {
         // an explicit selection (e.g. pressing enter) supersedes a pending auto launch
-        launchGuard?.cancel()
+        (touchPrevention as? AutoLaunchTouchPrevention.InLauncher)?.cancel()
         val appInfo = appsListDisplayed.getOrNull(pos) ?: return
         when (intention) {
             AbstractListActivity.Companion.Intention.VIEW -> {
@@ -254,34 +253,14 @@ class AppsRecyclerAdapter(
         }
     }
 
-    private fun autoLaunch(app: AbstractDetailedAppInfo) {
-        app.getAction().invoke(activity)
-
-        val inputMethodManager =
-            activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-        inputMethodManager.hideSoftInputFromWindow(
-            (activity.currentFocus ?: root).windowToken, 0
-        )
-    }
-
     fun updateAppsList(triggerAutoLaunch: Boolean = false) {
         appsListDisplayed.clear()
         apps.value?.let { appsListDisplayed.addAll(appFilter(it)) }
 
-        val guard = launchGuard
-        if (guard != null) {
-            // A launch is pending: further typing extends the guard, unless the user
-            // cleared the query or typed something that no longer matches the app.
-            if (triggerAutoLaunch) {
-                val target = guard.app.getRawInfo()
-                if (appFilter.query.isBlank() ||
-                    appsListDisplayed.none { it.getRawInfo() == target }
-                ) {
-                    guard.cancel()
-                } else {
-                    guard.extend()
-                }
-            }
+        if (touchPrevention != null) {
+            // The keyboard is closed while touch prevention is active; input that still
+            // arrives (e.g. from a hardware keyboard) only extends it, it never launches again.
+            if (triggerAutoLaunch) touchPrevention?.extend()
         } else if (triggerAutoLaunch &&
             appsListDisplayed.size == 1
             && intention == AbstractListActivity.Companion.Intention.VIEW
@@ -289,15 +268,11 @@ class AppsRecyclerAdapter(
             && LauncherPreferences.functionality().searchAutoLaunch()
         ) {
             val app = appsListDisplayed[0]
-            if (SearchLaunchGuard.durationMs() > 0) {
-                SearchLaunchGuard(
-                    activity, app,
-                    launch = { autoLaunch(app) },
-                    onFinished = { launchGuard = null }
-                ).also { launchGuard = it }.start()
-            } else {
-                autoLaunch(app)
-            }
+            touchPrevention = AutoLaunchTouchPrevention.launch(
+                activity, root, app,
+                doLaunch = { app.getAction().invoke(activity) },
+                onFinished = { touchPrevention = null }
+            )
         }
 
         notifyDataSetChanged()
