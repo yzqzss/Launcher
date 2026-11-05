@@ -189,7 +189,7 @@
     <string name="settings_functionality_auto_launch_touch_prevention_extension">Extension per tap (ms)</string>
     <string name="settings_functionality_auto_launch_touch_prevention_max_duration">Maximum duration (ms)</string>
     <string name="settings_functionality_auto_launch_touch_prevention_system_overlay">Cover keyboard area with system overlay</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">Open the app immediately and cover only the former keyboard area with a floating window on top of it. Requires the \"Display over other apps\" permission; without it the launcher blocks touches in its own window and opens the app afterwards.</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">Open the app immediately and cover only the former keyboard area with a floating window on top of it, so the app opens without any delay. Requires the \"Display over other apps\" permission; without it the launcher blocks touches in its own window and opens the app afterwards.</string>
     <string name="auto_launch_touch_prevention_opening">Opening %1$s</string>
 
     <string name="settings_functionality_search_web">Search the web</string>

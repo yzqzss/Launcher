@@ -261,7 +261,7 @@
     <string name="settings_functionality_auto_launch_touch_prevention_extension">每次点击延长（毫秒）</string>
     <string name="settings_functionality_auto_launch_touch_prevention_max_duration">最长时长（毫秒）</string>
     <string name="settings_functionality_auto_launch_touch_prevention_system_overlay">用悬浮窗覆盖键盘区域</string>
-    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">立即打开应用，并在原键盘位置上方显示悬浮窗拦截点击。需要“显示在其他应用的上层”权限；没有权限时改为在启动器内拦截点击，计时结束后再打开应用。</string>
+    <string name="settings_functionality_auto_launch_touch_prevention_system_overlay_summary">立即打开应用，并在原键盘位置上方显示悬浮窗拦截点击，不会拖慢应用的打开速度。需要“显示在其他应用的上层”权限；没有权限时改为在启动器内拦截点击，计时结束后再打开应用。</string>
     <string name="auto_launch_touch_prevention_opening">正在打开 %1$s</string>
     <string name="settings_list_layout">应用程序列表样式</string>
     <string name="pin_shortcut_button_bind">绑定到手势</string>
