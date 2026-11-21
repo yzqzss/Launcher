@@ -1,10 +1,13 @@
 package de.jrpie.android.launcher.ui
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.Drawable
+import android.os.Build
+import android.view.ContextThemeWrapper
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
@@ -12,6 +15,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import androidx.appcompat.widget.SearchView
 import androidx.recyclerview.widget.RecyclerView
+import de.jrpie.android.launcher.R
 import de.jrpie.android.launcher.preferences.LauncherPreferences
 import de.jrpie.android.launcher.preferences.theme.ColorTheme
 import kotlin.math.absoluteValue
@@ -31,6 +35,25 @@ fun View.blink(
         it.repeatMode = repeatMode
         it.repeatCount = times
     })
+}
+
+fun styledAlertDialogBuilder(context: Context, danger: Boolean = false): AlertDialog.Builder {
+    val context = ContextThemeWrapper(context, R.style.AlertDialogThemedBase).apply {
+        LauncherPreferences.theme().colorTheme().applyToTheme(theme, false)
+    }
+    return AlertDialog.Builder(context, if(danger) R.style.AlertDialogDanger  else  R.style.AlertDialogThemed)
+}
+
+fun ImageView.setTooltipAndContentDescription(string: String) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        tooltipText = string
+    }
+    contentDescription = string
+}
+
+fun ImageView.setTooltipAndContentDescription(id: Int) {
+    val string = context.getString(id)
+    setTooltipAndContentDescription(string)
 }
 
 // Taken from: https://stackoverflow.com/a/30340794/12787264

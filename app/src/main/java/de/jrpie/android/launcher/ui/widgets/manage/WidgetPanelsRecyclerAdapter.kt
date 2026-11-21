@@ -1,5 +1,6 @@
 package de.jrpie.android.launcher.ui.widgets.manage
 
+import android.app.Dialog
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -7,10 +8,10 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.PopupMenu
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import de.jrpie.android.launcher.R
 import de.jrpie.android.launcher.preferences.LauncherPreferences
+import de.jrpie.android.launcher.ui.styledAlertDialogBuilder
 import de.jrpie.android.launcher.widgets.WidgetPanel
 import de.jrpie.android.launcher.widgets.updateWidgetPanel
 
@@ -64,13 +65,13 @@ class WidgetPanelsRecyclerAdapter(
             true
         }
         popup.menu.add(R.string.manage_widget_panels_rename).setOnMenuItemClickListener { _ ->
-            AlertDialog.Builder(context, R.style.AlertDialogCustom).apply {
+            styledAlertDialogBuilder(context).apply {
                 setNegativeButton(R.string.dialog_cancel) { _, _ -> }
                 setPositiveButton(R.string.dialog_ok) { dialogInterface, _ ->
-                    var newLabel = (dialogInterface as? AlertDialog)
-                        ?.findViewById<EditText>(R.id.dialog_rename_widget_panel_edit_text)
-                        ?.text?.toString()
-                    if (newLabel.isNullOrEmpty()) {
+                    var newLabel = (dialogInterface as Dialog)
+                        .findViewById<EditText>(R.id.dialog_rename_widget_panel_edit_text)
+                        .text.toString()
+                    if (newLabel.isEmpty()) {
                         newLabel =
                             (context.getString(R.string.widget_panel_default_name, widgetPanel.id))
                     }
