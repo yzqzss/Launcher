@@ -2,7 +2,13 @@ package de.jrpie.android.launcher.ui.list.apps
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Service
+import android.content.pm.LauncherApps
+import android.content.pm.ShortcutInfo
 import android.graphics.Rect
+import android.os.Build
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,6 +23,13 @@ import de.jrpie.android.launcher.actions.Gesture
 import de.jrpie.android.launcher.apps.AbstractDetailedAppInfo
 import de.jrpie.android.launcher.apps.AppFilter
 import de.jrpie.android.launcher.apps.AppInfo
+import de.jrpie.android.launcher.actions.ShortcutAction
+import de.jrpie.android.launcher.apps.DetailedAppInfo
+import de.jrpie.android.launcher.apps.PinnedShortcutInfo
+import de.jrpie.android.launcher.getAppShortcuts
+import de.jrpie.android.launcher.isDefaultHomeScreen
+import de.jrpie.android.launcher.removeUnusedShortcuts
+import de.jrpie.android.launcher.ui.styledAlertDialogBuilder
 import de.jrpie.android.launcher.preferences.LauncherPreferences
 import de.jrpie.android.launcher.preferences.list.AppNameFormat
 import de.jrpie.android.launcher.preferences.list.ListLayout
@@ -117,6 +130,70 @@ class AppsRecyclerAdapter(
             // ensure onClicks are actually caught
             viewHolder.textView.setOnClickListener { viewHolder.onClick(viewHolder.textView) }
             viewHolder.img.setOnClickListener { viewHolder.onClick(viewHolder.img) }
+        } else if (intention == AbstractListActivity.Companion.Intention.PICK) {
+            // choosing an action for a gesture: long press to choose one of the app's shortcuts
+            viewHolder.itemView.setOnLongClickListener { showShortcutPicker(appsListDisplayed[i]) }
+            viewHolder.textView.setOnLongClickListener { showShortcutPicker(appsListDisplayed[i]) }
+            viewHolder.img.setOnLongClickListener { showShortcutPicker(appsListDisplayed[i]) }
+            viewHolder.textView.setOnClickListener { viewHolder.onClick(viewHolder.textView) }
+            viewHolder.img.setOnClickListener { viewHolder.onClick(viewHolder.img) }
+        }
+    }
+
+    /**
+     * Lets the user bind one of the app's shortcuts (e.g. "Scan", "Pay") to the gesture
+     * an action is being chosen for, instead of opening the app.
+     */
+    private fun showShortcutPicker(appInfo: AbstractDetailedAppInfo): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) return false
+        val rawInfo = (appInfo as? DetailedAppInfo)?.getRawInfo() ?: return false
+        val gesture = forGesture?.let { Gesture.byId(it) } ?: return false
+        val shortcuts = getAppShortcuts(rawInfo, activity)
+        if (shortcuts.isEmpty()) {
+            Toast.makeText(
+                activity,
+                if (isDefaultHomeScreen(activity)) {
+                    R.string.toast_app_has_no_shortcuts
+                } else {
+                    R.string.toast_shortcuts_need_default_launcher
+                },
+                Toast.LENGTH_SHORT
+            ).show()
+            return true
+        }
+        val labels = shortcuts.map { (it.shortLabel ?: it.longLabel ?: it.id).toString() }
+        styledAlertDialogBuilder(activity)
+            .setTitle(appInfo.getCustomLabel(activity))
+            .setItems(labels.toTypedArray()) { _, which ->
+                val shortcut = shortcuts[which]
+                keepShortcutPinned(shortcut)
+                Action.setActionForGesture(gesture, ShortcutAction(PinnedShortcutInfo(shortcut)))
+                activity.finish()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+        return true
+    }
+
+    /**
+     * Pins the shortcut, so that it stays available even if the app removes it as a dynamic
+     * shortcut (bound shortcuts are also pinned on every start, see [removeUnusedShortcuts]).
+     */
+    @RequiresApi(Build.VERSION_CODES.N_MR1)
+    private fun keepShortcutPinned(shortcut: ShortcutInfo) {
+        val launcherApps = activity.getSystemService(Service.LAUNCHER_APPS_SERVICE) as LauncherApps
+        try {
+            val pinned = launcherApps.getShortcuts(
+                LauncherApps.ShortcutQuery().apply {
+                    setPackage(shortcut.`package`)
+                    setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
+                },
+                shortcut.userHandle
+            )?.map { it.id }.orEmpty()
+            // pinShortcuts replaces the pinned shortcuts of the package, so keep the others
+            launcherApps.pinShortcuts(shortcut.`package`, (pinned + shortcut.id).distinct(), shortcut.userHandle)
+        } catch (_: Exception) {
+            // not the default launcher or profile locked: pinned again on the next start
         }
     }
 

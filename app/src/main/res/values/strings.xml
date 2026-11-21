@@ -293,6 +293,9 @@
 
     <string name="list_apps_search_hint">Search</string>
     <string name="list_apps_search_hint_no_auto_launch">Search (no auto launch)</string>
+    <string name="list_apps_search_hint_pick_shortcut">Search (long press an app for its shortcuts)</string>
+    <string name="toast_app_has_no_shortcuts">This app has no shortcuts</string>
+    <string name="toast_shortcuts_need_default_launcher">Shortcuts are only available while µLauncher is the default home app</string>
 
     <string name="list_other_settings">μLauncher Settings</string>
     <string name="list_other_list">All Applications</string>

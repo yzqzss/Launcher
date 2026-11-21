@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -160,6 +161,15 @@ class ListFragmentApps : Fragment(), UIObject {
                 }
             appsRecyclerAdapter.setFavoritesVisibility(listActivity.favoritesVisibility)
             (activity as? AppListActivity)?.updateTitle()
+        }
+
+        if (listActivity.intention == AbstractListActivity.Companion.Intention.PICK &&
+            listActivity.forGesture != null &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1
+        ) {
+            // see AppsRecyclerAdapter.showShortcutPicker
+            binding.listAppsSearchview.queryHint =
+                getString(R.string.list_apps_search_hint_pick_shortcut)
         }
 
         applyKeyboardSettings(requireActivity(), binding.listAppsRview, binding.listAppsSearchview,
